@@ -51,7 +51,7 @@ function iterate (x, y, z) {
     return {x, y, z}
 }
 
-function gaussian() {
+function gaussian(matrix) {
 
     let x = 0
     let y = 0
@@ -113,4 +113,4 @@ function gaussian() {
     }
 }
 
-gaussian()
+gaussian(matrix)

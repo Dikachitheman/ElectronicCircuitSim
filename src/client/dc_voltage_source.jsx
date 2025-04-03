@@ -127,13 +127,14 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
     };
   
     // Create circle and plus/minus symbols
-    const radius = 20;
+    const radius = 8;
     const symbolOffset = 12;
   
     // Transform a point based on angle
     const transformPoint = (x, y) => {
       const rotatedX = x * Math.cos(angle) - y * Math.sin(angle);
       const rotatedY = x * Math.sin(angle) + y * Math.cos(angle);
+
       return {
         x: midPoint.x + rotatedX,
         y: midPoint.y + rotatedY
@@ -157,11 +158,14 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
   
     const plusPoint = transformPoint(0, -symbolOffset);
     const minusPoint = transformPoint(0, symbolOffset);
+
+    console.log("p1", p1, "startx", startX, "starty", startY, "midpoint", midPoint, "endx", endX, "endy", endY, "p2", p2)
   
+    /** temp offset to fix bug */
     return {
       mainPath: `
         M ${p1.x} ${p1.y}
-        L ${startX} ${startY}
+        L ${startX + 0.001} ${startY + 0.001} 
         M ${endX} ${endY}
         L ${p2.x} ${p2.y}
       `,
@@ -201,13 +205,13 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
 
   return (
     <>
-        <defs>
+        {/* <defs>
           <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#4299e1" stopOpacity="0.3" />
             <stop offset="50%" stopColor="#63b3ed" stopOpacity="0.8" />
             <stop offset="100%" stopColor="#4299e1" stopOpacity="0.3" />
           </linearGradient>
-        </defs>
+        </defs> */}
 
         {(xA !== null && yA !== null && xB !== null && yB !== null) && (
           <>
@@ -215,7 +219,7 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
               d={path.mainPath}
               fill="none"
               stroke="url(#wireGradient)"
-              strokeWidth="4"
+              strokeWidth="1"
             />
             <circle
               cx={path.circle.cx}
@@ -223,7 +227,7 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
               r={path.circle.r}
               fill="none"
               stroke="url(#wireGradient)"
-              strokeWidth="4"
+              strokeWidth="1"
             />
             {/* Plus symbol */}
             <line
@@ -232,7 +236,7 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
               x2={path.plus.x + 8}
               y2={path.plus.y}
               stroke="url(#wireGradient)"
-              strokeWidth="3"
+              strokeWidth="1"
             />
             <line
               x1={path.plus.x}
@@ -240,7 +244,7 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
               x2={path.plus.x}
               y2={path.plus.y + 8}
               stroke="url(#wireGradient)"
-              strokeWidth="3"
+              strokeWidth="1"
             />
             {/* Minus symbol */}
             <line
@@ -249,19 +253,18 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
               x2={path.minus.x + 8}
               y2={path.minus.y}
               stroke="url(#wireGradient)"
-              strokeWidth="3"
+              strokeWidth="1"
             />
           </>
         )}
 
         <text x={(xA + xB + 40) / 2} y={(yA + yB + 40) / 2} className="text">id {id} val {val}</text>
-
-
+        
         {/* Connection points */}
         <circle
           cx={pointA.x}
           cy={pointA.y}
-          r="8"
+          r="2"
           className="fill-blue-400 cursor-pointer"
           onMouseDown={(event) => {
             event.preventDefault();
@@ -278,7 +281,7 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
         <circle
           cx={pointB.x}
           cy={pointB.y}
-          r="8"
+          r="2"
           className="fill-blue-400 cursor-pointer"
           onMouseDown={(event) => {
             event.preventDefault();

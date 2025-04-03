@@ -27,6 +27,8 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
     setPoint({ x, y });
   };
 
+  let scale = 4
+
   const generateCapacitorPath = (p1, p2) => {
     const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
     const midPoint = {
@@ -36,21 +38,21 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
 
     // Create capacitor plates
     const plate1Points = [
-      { x: -10, y: -20 }, // Top of left plate
-      { x: -10, y: 20 }   // Bottom of left plate
+      { x: -10 / scale, y: -20 /scale }, // Top of left plate
+      { x: -10 / scale, y: 20 /scale }   // Bottom of left plate
     ];
 
     const plate2Points = [
-      { x: 10, y: -20 },  // Top of right plate
-      { x: 10, y: 20 }    // Bottom of right plate
+      { x: 10 / scale, y: -20 /scale },  // Top of right plate
+      { x: 10 /scale, y: 20 /scale }    // Bottom of right plate
     ];
 
     const plate3Points = [
-        { x: -10, y: -0 }, 
+        { x: -2.5, y: -0 }, 
       ];
 
     const plate4Points = [
-        { x: 10, y: -0 }, 
+        { x: 2.5, y: -0 }, 
       ];
 
     // Transform points based on angle
@@ -199,7 +201,7 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
             // stroke="url(#wireGradient)"
             onClick={()=>setThisSelected(id)}
             className={` ${ thisSelected === id ? ("stroke-yellow-400") : ("stroke-blue-500")}`}
-            strokeWidth="4"
+            strokeWidth="1"
           />
         )}
 
@@ -210,7 +212,7 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
         <circle
           cx={pointA.x}
           cy={pointA.y}
-          r="8"
+          r="2"
           className="fill-blue-400 cursor-pointer"
           onMouseDown={(event) => {
             event.preventDefault();
@@ -227,7 +229,7 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
         <circle
           cx={pointB.x}
           cy={pointB.y}
-          r="8"
+          r="2"
           className="fill-blue-400 cursor-pointer"
           onMouseDown={(event) => {
             event.preventDefault();

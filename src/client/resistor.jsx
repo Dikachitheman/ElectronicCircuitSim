@@ -34,16 +34,17 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
       y: (p1.y + p2.y) / 2
     };
 
+    let scale = 4
     // Create zigzag pattern relative to the line
     const zigzagPoints = [
-      { x: -20, y: 0 },    // Start of resistor
-      { x: -10, y: -20 },  // First zigzag up
-      { x: 10, y: 20 },    // Down
-      { x: 30, y: -20 },   // Up
-      { x: 50, y: 20 },    // Down
-      { x: 70, y: -20 },   // Up
-      { x: 80, y: 0 },    // Down
-      { x: 100, y: 0 }      // End of resistor
+      { x: -20 / scale, y: 0 / scale},    // Start of resistor
+      { x: -10 / scale, y: -20 / scale},  // First zigzag up
+      { x: 10 / scale, y: 20 / scale},    // Down
+      { x: 30 / scale, y: -20 / scale},   // Up
+      { x: 50 / scale, y: 20 / scale},    // Down
+      { x: 70 / scale, y: -20 / scale},   // Up
+      { x: 80 / scale, y: 0 / scale},    // Down
+      { x: 100 / scale, y: 0 / scale}      // End of resistor
     ];
 
     // Transform zigzag points based on angle
@@ -103,10 +104,10 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
               onClick={()=>setThisSelected(id)}
               // stroke="url(#wireGradient)"
               className={` ${ thisSelected === id ? ("stroke-yellow-400") : ("stroke-blue-500")}`}
-              strokeWidth="4"
+              strokeWidth="1"
             />
 
-            <text x={(xA + xB + 40) / 2} y={(yA + yB + 40) / 2} className="text">id {id} val {val}</text>
+            <text x={(xA + xB + 40) / 2} y={(yA + yB + 40) / 2} className="text">id {id}, val {val}</text>
 
             </>
           )
@@ -118,7 +119,7 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
             <circle
             cx={pointA.x}
             cy={pointA.y}
-            r="8"
+            r="2"
             className="fill-blue-400 cursor-pointer"
             onMouseDown={(event) => {
               event.preventDefault();
@@ -140,7 +141,7 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
             <circle
               cx={pointB.x}
               cy={pointB.y}
-              r="8"
+              r="2"
               className="fill-blue-400 cursor-pointer"
               onMouseDown={(event) => {
                 event.preventDefault();

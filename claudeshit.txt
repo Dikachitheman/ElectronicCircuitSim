@@ -1,0 +1,6 @@
+Simulation Engine Service - Handles the core circuit simulation calculations
+Component Library Service - Manages the database of available circuit components
+User Project Service - Stores and retrieves user's saved circuits/projects
+Authentication Service - Handles user login and permissions
+Rendering Service - Converts simulation results into visual representations
+Export/Import Service - Manages file conversions and exports to different formats

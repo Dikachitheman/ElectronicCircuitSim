@@ -93,13 +93,13 @@ const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=nul
   const returnCoords = (e) => {
     // console.log("e", e)
       if (e === 'start') {
-        // console.log("points start", points.start)
+        console.log("points start", points.start)
         setExistingPoint(points.start)
       } else if ( e === 'middle') {        
-        // console.log("points middle", points.middle)
+        console.log("points middle", points.middle)
         setExistingPoint(points.middle)
       } else if (e === 'end') {
-        // console.log("points end", points.end)
+        console.log("points end", points.end)
         setExistingPoint(points.end)
       }
     }
@@ -114,7 +114,7 @@ const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=nul
             onClick={()=>setThisSelected(id)}
             className={`opacity-0 stroke-white`}
             fill="none"
-            strokeWidth="24"
+            strokeWidth="6"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -124,7 +124,7 @@ const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=nul
             onClick={()=>setThisSelected(id)}
             className={` ${ thisSelected === id ? ("stroke-red-500") : ("stroke-blue-500")} opacity-20`}
             fill="none"
-            strokeWidth="8"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -135,12 +135,12 @@ const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=nul
             d={calculatePath()}
             className={` ${ thisSelected === id ? ("stroke-yellow-400") : ("stroke-blue-400")}`}
             fill="none"
-            strokeWidth="4"
+            strokeWidth="1"
             strokeLinecap="round"
             strokeLinejoin="round"
             style={{
-              strokeDasharray: '20 40',
-              animation: 'dash 2s linear infinite'
+              strokeDasharray: '6 10',
+              animation: 'dash 10s linear infinite'
             }}
           />
 
@@ -154,14 +154,14 @@ const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=nul
           <circle
             cx={points.start.x}
             cy={points.start.y}
-            r="20"
+            r="5"
             className="fill-transparent cursor-move"
             onMouseDown={handleDragStart('start')}
           />
           <circle
             cx={points.start.x}
             cy={points.start.y}
-            r="8"
+            r="2"
             className="fill-green-400"
             onMouseDown={handleDragStart('start')}
             // onClick={()=>returnCoords('start')}
@@ -176,14 +176,14 @@ const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=nul
             <circle
               cx={points.middle.x}
               cy={points.start.y}
-              r="20"
+              r="5"
               className="fill-transparent cursor-move"
               onMouseDown={handleDragStart('middle')}
             />
             <circle
               cx={points.middle.x}
               cy={points.start.y}
-              r="8"
+              r="2"
               className="fill-yellow-400"
               onMouseDown={handleDragStart('middle')}
               // onClick={()=>returnCoords('middle')}
@@ -193,14 +193,14 @@ const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=nul
             <circle
               cx={points.middle.x}
               cy={points.end.y}
-              r="20"
+              r="5"
               className="fill-transparent cursor-move"
               onMouseDown={handleDragStart('middle')}
             />
             <circle
               cx={points.middle.x}
               cy={points.end.y}
-              r="8"
+              r="2"
               className="fill-yellow-400"
               onMouseDown={handleDragStart('middle')}
               // onClick={()=>returnCoords('middle')}
@@ -215,14 +215,14 @@ const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=nul
           <circle
             cx={points.end.x}
             cy={points.end.y}
-            r="20"
+            r="5"
             className="fill-transparent cursor-move"
             onMouseDown={handleDragStart('end')}
           />
           <circle
             cx={points.end.x}
             cy={points.end.y}
-            r="8"
+            r="2"
             className="fill-red-400"
             onMouseDown={handleDragStart('end')}
             // onClick={()=>returnCoords('end')}

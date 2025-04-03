@@ -90,8 +90,8 @@ export const Inductor = ({id=null, val, thisSelected, setThisSelected, type = "I
     // Create inductor coils
     const coilPoints = [];
     const numCoils = 4;
-    const coilSpacing = 15;
-    const coilRadius = 10;
+    const coilSpacing = 6;
+    const coilRadius = 2.5;
 
     for (let i = 0; i <= numCoils * 8; i++) {
       const x = (i / 8) * coilSpacing - (numCoils * coilSpacing) / 2;
@@ -199,7 +199,7 @@ export const Inductor = ({id=null, val, thisSelected, setThisSelected, type = "I
             // stroke="url(#wireGradient)"
             onClick={()=>setThisSelected(id)}
             className={` ${ thisSelected === id ? ("stroke-yellow-400") : ("stroke-blue-500")}`}
-            strokeWidth="4"
+            strokeWidth="1"
           />
         )}
 
@@ -210,7 +210,7 @@ export const Inductor = ({id=null, val, thisSelected, setThisSelected, type = "I
         <circle
           cx={pointA.x}
           cy={pointA.y}
-          r="8"
+          r="2"
           className="fill-blue-400 cursor-pointer"
           onMouseDown={(event) => {
             event.preventDefault();
@@ -227,7 +227,7 @@ export const Inductor = ({id=null, val, thisSelected, setThisSelected, type = "I
         <circle
           cx={pointB.x}
           cy={pointB.y}
-          r="8"
+          r="2"
           className="fill-blue-400 cursor-pointer"
           onMouseDown={(event) => {
             event.preventDefault();
