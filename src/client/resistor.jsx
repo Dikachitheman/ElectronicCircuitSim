@@ -11,7 +11,6 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
     if (!svgRef.current) return;
     let distance = Math.sqrt(Math.pow(pointB.x - pointA.x, 2) + Math.pow(pointB.y - pointA.y, 2))
     if ( distance < 200 ) {
-      console.log("jj")
       console.log(distance)
     }
     setD(distance)
@@ -74,7 +73,6 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
   const pathD = generateResistorPath(pointA, pointB);
 
   const returnCoords = (e) => {
-    console.log("e", e)
       if (e === 'start') {
         // console.log("points start", points.start)
         setExistingPoint(pointA)

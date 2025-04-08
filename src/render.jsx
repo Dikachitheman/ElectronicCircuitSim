@@ -9,6 +9,8 @@ import { CapacitorIcon } from './assets/svgIcon';
 import { Canvas } from './canvas';
 import Sine from './client/sine';
 import { analyzeCircuit } from './engine/nodalv2';
+import { Discrete } from './engine/formatMatrix';
+import { gaussian } from './engine/gaussian';
 
 export const Render = () => {
 
@@ -27,77 +29,96 @@ export const Render = () => {
   const [isExisting, setIsExisting] = useState(true)
   const [open, setOpen] = useState(null)
   const [scopeList, setScopeList] = useState([])
-  const [timeSeriesResult, setTimeSeriesResults] = useState([])
+  const [PVR, setPVR] = useState(null)
   const [tabActive, settabActive] = useState("comp")
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: null, y: null });
+  const [drawCoords, setDrawCoords] = useState(null)
+  const [activateTool, setActivateTool] = useState(false)
+  const [sumDx, setSumDx] = useState(0)
+  const [viewBox, setViewBox] = useState({
+    x: 0,
+    y: 0,
+    width: 580,
+    height: 560
+  });
 
-  const el = [
-    {
-      components: [1, 2],
-      coords: { x: 250.8046875, y: 261.1953125 },
-      id: "J1",
-      polar: "none",
-      type: ["Resistor", "Capacitor"],
-      value: ["4ohms", "10uf"]
-    },
-    {
-      components: [1, 3, 5],
-      coords: { x: 335.42578125, y: 261.1953125 },
-      id: "J2",
-      polar: "none",
-      type: ["Resistor", "DCVoltageSource", "Resistor"],
-      value: ["4ohms", "5VDC", "4ohms"]
-    },
-    {
-      components: [2, 4],
-      coords: { x: 250.8046875, y: 329.1640625 },
-      id: "J3",
-      polar: "none",
-      type: ["Capacitor", "StepWire"],
-      value: ["10uf", "2A"]
-    },
-    {
-      components: [3, 4, 7],
-      coords: { x: 335.42578125, y: 330.5234375 },
-      id: "J4",
-      polar: "none",
-      type: ["DCVoltageSource", "StepWire", "Resistor"],
-      value: ["5VDC", "2A", "4ohms"]
-    },
-    {
-      components: [5, 6],
-      coords: { x: 416.6484375, y: 261.875 },
-      id: "J5",
-      polar: "none",
-      type: ["Resistor", "Capacitor"],
-      value: ["4ohms", "10uf"]
-    },
-    {
-      components: [6, 7],
-      coords: { x: 415.62890625, y: 331.8828125 },
-      id: "J6",
-      polar: "none",
-      type: ["Capacitor", "Resistor"],
-      value: ["10uf", "4ohms"]
-    }
-  ];
-  useEffect(() => {
-    // const findJunctionsPromise = new Promise((resolve) => {
-    //   const junctions = findJunctions(selection);
-    //   resolve(junctions);
-    // });
+  // useEffect(() => {
+
+  //   const findJunctionsPromise = new Promise((resolve) => {
+  //     const junctions = findJunctions(selection);
+  //     console.log("junctions", junctions)
+  //     resolve(junctions);
+  //   });
   
-    // findJunctionsPromise
-    //   .then(junctions => {
-    //     const loops = findCircuitCycles(junctions);
-    //     return { junctions, loops };
-    //   })
-    //   .then(({ junctions, loops }) => {
-    //     const matrix = analyzeCircuit(junctions, loops);
-    //   });
+  //   findJunctionsPromise
+  //     .then(junctions => {
+  //       const loops = findCircuitCycles(junctions);
+  //       return { junctions, loops };
+  //     })
+  //     .then(({ junctions, loops }) => {
+  //       const {matrix, cmap} = analyzeCircuit(junctions, loops);
+  //       return {matrix, cmap}
+  //     })
+  //     .then(({matrix, cmap}) => {
+  //       let alpha = 90 // peak current, voltage.
+  //       let discreteGaussianMatrix = Discrete(matrix, alpha)
+  //       return {discreteGaussianMatrix, cmap}
+  //     })
+  //     .then(({discreteGaussianMatrix, cmap}) => {
+  //       let currents = gaussian(discreteGaussianMatrix)
+  //       return ({currents, cmap})
+  //     })
+  //     .then (({currents, cmap}) => {
 
-    const loops = findCircuitCycles(el);
-    const matrix = analyzeCircuit(el, loops);
-  }, [change]);
+  //       let currentValue = 0
+  //       let peakVoltageRegister = []
+
+  //       for (let c in cmap) {
+  //         if (cmap[c].loopIndex.length < 2) {
+  //           let thisCurrent = cmap[c].loopIndex[0]
+  //           currentValue = currents[thisCurrent]
+  //         } else {
+  //           let firstCurrent = cmap[c].loopIndex[0]
+  //           let secondCurrent = cmap[c].loopIndex[1]
+  //           currentValue = currents[firstCurrent] - currents[secondCurrent]
+  //         }
+
+  //         let peakVoltage = cmap[c].details.info && (currentValue * getIntVal(cmap[c].details.info))
+
+  //         peakVoltageRegister.push({vmax: peakVoltage, imax: currentValue, impedance: cmap[c].value, comp: cmap[c].details.comp, type: cmap[c].details.type})
+  //       }
+
+  //       console.log("pvroo", peakVoltageRegister)
+  //       setPVR(peakVoltageRegister)
+  //     })
+
+  // }, [change]);
+
+  const parseVoltage = (val) => {
+    const numericValue = parseFloat(val);
+    return isNaN(numericValue) ? 0 : numericValue;
+};
+
+  const getIntVal = (val) => {
+    if (val && val.includes('ohms')) {
+      // For ohms values
+      return parseFloat(val);
+    } else if (val && val.includes('uf') || val.includes('H')) {
+
+      if (val.startsWith('j') && val.length > 4) {
+          const numericPart = val.slice(1, -1);
+          return parseFloat(numericPart);
+      } else if (val.startsWith('-j') && val.length > 4) {
+          const numericPart = val.slice(2, -2);
+          return parseFloat(numericPart);
+      } else {
+          // For values without j prefix or non-standard format
+          return parseVoltage(val);
+      }
+    }
+
+  }
 
   useEffect(() => {
 
@@ -107,9 +128,10 @@ export const Render = () => {
       setIsExisting(false)
     }
 
-  }, [selection])
+  }, [selection, selectionInstance, activeClick])
 
   const screenToSVGCoords = (screenX, screenY) => {
+
     const svgElement = svgRef.current;
     if (!svgElement) return { x: 0, y: 0 };
 
@@ -118,7 +140,7 @@ export const Render = () => {
     point.x = screenX;
     point.y = screenY;
     const svgPoint = point.matrixTransform(CTM.inverse());
-    
+
     return {
       x: Math.max(50, Math.min(750, svgPoint.x)),
       y: Math.max(50, Math.min(350, svgPoint.y))
@@ -140,10 +162,12 @@ export const Render = () => {
         junctions[junctionKeyA].components.push(component.id);
         junctions[junctionKeyA].type.push(component.component);
         junctions[junctionKeyA].value.push(component.value);
-
-        junctions[junctionKeyA].polar = component.component === "DCVoltageSource" ? "negative" : "none"
-
-        // console.log("keya", junctions[junctionKeyA])
+        
+        // Only set polar if not already set and component is DCVoltageSource
+        if ((junctions[junctionKeyA].polar === "none" || !junctions[junctionKeyA].polar) && 
+            (component.component === "DCVoltageSource" || junctions[junctionKeyA].type.includes("DCVoltageSource"))) {
+          junctions[junctionKeyA].polar = "positive";
+        }
 
       } else {
         junctions[junctionKeyA] = {
@@ -152,30 +176,33 @@ export const Render = () => {
           components: [component.id],
           value: [component.value],
           type: [component.component],
-          polar: component.component === "DCVoltageSource" ? "positive" : "none" // CHECK TO DEBUG 
+          polar: component.component === "DCVoltageSource" ? "positive" : "none"
         };
       }
   
       // Check for junctions at xB, yB
       const junctionKeyB = `${xB},${yB}`;
       if (junctions[junctionKeyB]) {
-        console.log("pos", component.component)
         junctions[junctionKeyB].components.push(component.id);
         junctions[junctionKeyB].type.push(component.component);
         junctions[junctionKeyB].value.push(component.value);
+        
+        // Only set polar if not already set and component is DCVoltageSource
+        if ((junctions[junctionKeyB].polar === "none" || !junctions[junctionKeyB].polar) && 
+            (component.component === "DCVoltageSource" || junctions[junctionKeyB].type.includes("DCVoltageSource"))) {
+          junctions[junctionKeyB].polar = "negative";
+        }
 
-        junctions[junctionKeyB].polar = component.component === "DCVoltageSource" ? "negative" : "none"
-        // console.log("keyb", junctions[junctionKeyB])
       } else {
-        console.log("neg", component.component)
         junctions[junctionKeyB] = {
           id: `J${Object.keys(junctions).length + 1}`, // Generate unique junction ID
           coords: { x: xB, y: yB },
           components: [component.id],
           value: [component.value],
           type: [component.component],
-          polar: component.component === "DCVoltageSource" ? "negative" : "none" // CHECK TO DEBUG
+          polar: component.component === "DCVoltageSource" ? "negative" : "none"
         };
+  
       }
     });
     // Convert the map to an array of junctions
@@ -186,28 +213,23 @@ export const Render = () => {
     // e.preventDefault()
 
     if (component === "StepWire" && selectionInstance.component !== "StepWire") {
-
-      const init = {id: selection.length + 1, component: "StepWire", value: "2A", orientation: isVertical === 'v' ? "v" : isVertical === 'h' ? "h" : isVertical === 'none' && 'none', coords: {}}
+      const init = {id: selection.length + 1, component: "StepWire", value: "2A", orientation: isVertical, coords: {}}
       setSelectionInstance(init)
       setActiveClick(component)
     } else if (component === "Resistor" && selectionInstance.component !== "Resistor") {
-
-      const init = {id: selection.length + 1, component: "Resistor", value: "4ohms", orientation: isVertical === 'v' ? "v" : isVertical === 'h' ? "h" : isVertical === 'none' && 'none', coords: {}}
+      const init = {id: selection.length + 1, component: "Resistor", value: "4ohms", orientation: isVertical, coords: {}}
       setSelectionInstance(init)
       setActiveClick(component)
     } else if (component === "Capacitor" && selectionInstance.component !== "Capacitor") {
-
-      const init = {id: selection.length + 1, component: "Capacitor", value: "10uf", orientation: isVertical === 'v' ? "v" : isVertical === 'h' ? "h" : isVertical === 'none' && 'none', coords: {}}
+      const init = {id: selection.length + 1, component: "Capacitor", value: "10uf", orientation: isVertical, coords: {}}
       setSelectionInstance(init)
       setActiveClick(component)
     } else if (component === "DCVoltageSource" && selectionInstance.component !== "DCVoltageSource") {
-
-      const init = {id: selection.length + 1, component: "DCVoltageSource", value: "5VDC", orientation: isVertical === 'v' ? "v" : isVertical === 'h' ? "h" : isVertical === 'none' && 'none', coords: {}}
+      const init = {id: selection.length + 1, component: "DCVoltageSource", value: "5VDC", orientation: isVertical, coords: {}}
       setSelectionInstance(init)
       setActiveClick(component)
     } else if (component === "Inductor" && selectionInstance.component !== "Inductor") {
-
-      const init = {id: selection.length + 1, component: "Inductor", value: "2H", orientation: isVertical === 'v' ? "v" : isVertical === 'h' ? "h" : isVertical === 'none' && 'none', coords: {}}
+      const init = {id: selection.length + 1, component: "Inductor", value: "2H", orientation: isVertical, coords: {}}
       setSelectionInstance(init)
       setActiveClick(component)
     } else {
@@ -217,10 +239,10 @@ export const Render = () => {
   }
 
   const handleCanvasClick = (e) => {    
+
       const coords = screenToSVGCoords(e.clientX, e.clientY);
 
       if (activeClick && !existingPoint) {
-
         if (secondClick) {
           selectionInstance.coords.xB = isVertical === 'v' ? selectionInstance.coords.xA : coords.x
           selectionInstance.coords.yB = isVertical === 'h' ? selectionInstance.coords.yA : coords.y
@@ -230,7 +252,6 @@ export const Render = () => {
           setSelectionInstance({})
           setSecondClick(false)
           setActiveClick(null)
-
         } else {
           selectionInstance.coords.xA = coords.x 
           selectionInstance.coords.yA = coords.y
@@ -262,60 +283,137 @@ export const Render = () => {
           setExistingPoint(null)
         }
       } 
-    }
+  }
 
-    const changeOrientation = () => {
-      const newOrientation =
-      selectionInstance.orientation === 'v'
-        ? 'h'
-        : selectionInstance.orientation === 'h'
-        ? "none"
-        : 'v';        
-        
-      setIsVertical(newOrientation);
-    
-      setSelectionInstance((prevInstance) => ({
-        ...prevInstance, 
-        orientation: newOrientation === 'v' ? 'v' : newOrientation === 'h' ? 'h' : newOrientation === 'none' && 'none', 
-      }));
-    
-    };
-
-    const ElectricalComponent = ({ id, val, type, xA, xB, yA, thisSelected, setThisSelected, yB,  svgRef }) => {
+  const changeOrientation = () => {
+    const newOrientation =
+    selectionInstance.orientation === 'v'
+      ? 'h'
+      : selectionInstance.orientation === 'h'
+      ? "none"
+      : 'v';        
       
-      const vert = selection[id - 1]['orientation'] === 'v' ? 'v' : selection[id - 1]['orientation'] === 'h' ? 'h' : selection[id - 1]['orientation'] === 'none' && 'none'
-      const componentMap = {
-        StepWire: <StepWireA id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint}/>,
-        Capacitor: <Capacitor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint}/>,
-        Inductor: <Inductor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint}/>,
-        Resistor: <Resistor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint}/>,
-        DCVoltageSource: <DCVoltageSource id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint}/>,
-        // Add more component types here
-      };
-    
-      const ComponentToRender = componentMap[type];
-      if (!ComponentToRender) {
-        console.error(`Invalid component type: ${type}`);
-        console.log(`Invalid component type: ${type}`);
-        return null; // Or render a default component
-      }
-    
-      return ComponentToRender;
-    };
+    setIsVertical(newOrientation);
+  
+    setSelectionInstance((prevInstance) => ({
+      ...prevInstance, 
+      orientation: newOrientation === 'v' ? 'v' : newOrientation === 'h' ? 'h' : newOrientation === 'none' && 'none', 
+    }));
+  
+  };
 
-  const [viewBox, setViewBox] = useState({
-    x: 0,
-    y: 0,
-    width: 580,
-    height: 560
-  });
+  const ElectricalComponent = ({ id, val, type, xA, xB, yA, thisSelected, setThisSelected, yB,  svgRef }) => {
+    
+    console.log("selection ec", selection[id-1])
+    const vert = selection[id - 1]['orientation']
+    const componentMap = {
+      StepWire: <StepWireA id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint}/>,
+      Capacitor: <Capacitor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint}/>,
+      Inductor: <Inductor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint}/>,
+      Resistor: <Resistor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint}/>,
+      DCVoltageSource: <DCVoltageSource id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint}/>,
+      // Add more component types here
+    };
+  
+    const ComponentToRender = componentMap[type];
+    if (!ComponentToRender) {
+      console.error(`Invalid component type: ${type}`);
+      console.log(`Invalid component type: ${type}`);
+      return null; // Or render a default component
+    }
+  
+    return ComponentToRender;
+  };
 
   const handleComponentClick = (id) => {
     setThisSelected(id)
   }
 
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  // useEffect(() => {
+  //   if (activateTool === true && drawCoords) {
+  //     console.log("tool activate click");
+  //     Promise.resolve()
+  //       .then(() => {
+  //         return handleToolClick("Capacitor");
+  //       })
+  //       .then(() => {
+  //         return handleCanvasClick({clientX: drawCoords[0][0], clientY: drawCoords[0][1]});
+  //       })
+  //       .then(() => {
+  //         return handleCanvasClick({clientX: drawCoords[1][0], clientY: drawCoords[1][1]});
+  //       })
+  //       .then(() => {
+  //         setActivateTool(false);
+  //         setDrawCoords(null);
+  //         console.log("tool activation sequence completed");
+  //       })
+  //       .catch(error => {
+  //         console.error("Error in tool activation sequence:", error);
+  //         setActivateTool(false);
+  //         setDrawCoords(null);
+  //       });
+  //   } else {
+  //     console.log("Tool activation conditions not met");
+  //   }
+  // }, [activateTool, drawCoords, selectionInstance, activeClick]);
+
+  useEffect(() => {
+
+    const coordDistance = (xa, ya, xb, yb) => {
+      // d=√((x2 – x1)² + (y2 – y1)²)
+
+      let offset = 0.01
+
+      let dx = xb - xa
+      let dy = yb - ya
+      let dx2 = dx * dx
+      let dy2 = dy * dy
+
+      let d = Math.sqrt(dx2 + dy2)
+
+      return d
+    }
+
+    if (activateTool === true && drawCoords) {
+      console.log("here")
+      const init = {id: selection.length + 1, component: "Capacitor", value: "10uf", orientation: isVertical, coords: {}}
+
+      let e = {clientX: drawCoords[0][0] * 6, clientY: drawCoords[0][1] * 6, clientXB: drawCoords[1][0] * 6, clientYB: drawCoords[1][1] * 6}
+      const coordsA = screenToSVGCoords(e.clientX, e.clientY);
+      const coordsB = screenToSVGCoords(e.clientXB, e.clientYB);
+
+      if (selection.length > 0) {
+        let result = 500; // distance of 50px or less. For now.
+
+        for (let i = 0; i < selection.length; i++) {
+          let xA = selection[i].coords.xA
+          let xB = selection[i].coords.xB
+          let yA = selection[i].coords.yA
+          let yB = selection[i].coords.yB
+
+          let d = coordDistance(xA, yA, drawCoords[0][0] * 6, drawCoords[0][1] * 6 )
+          if (d < result) { result = d; coordsA.x = xA; coordsA.y = yA}
+          d = coordDistance(xB, yB, drawCoords[0][0] * 6, drawCoords[0][1] * 6 )
+          if (d < result) { result = d; coordsA.x = xB; coordsA.y = yA}
+          d = coordDistance(xA, yA, drawCoords[1][0] * 6, drawCoords[1][1] * 6 )
+          if (d < result) { result = d; coordsB.x = xA; coordsB.y = yB}
+          d = coordDistance(xB, yB, drawCoords[1][0] * 6, drawCoords[1][1] * 6 )
+          if (d < result) { result = d; coordsB.x = xA; coordsA.y = xB}
+        }
+      }
+
+      init.coords.xA = coordsA.x 
+      init.coords.yA = coordsA.y
+      init.coords.xB = isVertical === 'v' ? init.coords.xA : coordsB.x
+      init.coords.yB = isVertical === 'h' ? init.coords.yA : coordsB.y
+      setRecentlyUsedTools([...recentlyUsedTools, {type: init.component, icon: <CapacitorIcon />}])
+      setSelection([...selection, init])
+      setSelectionInstance({})
+      setActivateTool(false)
+
+    }
+
+  }, [activateTool])
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -348,13 +446,26 @@ export const Render = () => {
     const handleMouseDown = (e) => {
       if (!isDragging) return;
       setDragStart({ x: e.clientX, y: e.clientY });
+      console.log("mousedown", { x: e.clientX, y: e.clientY })
     };
 
     const handleMouseMove = (e) => {
       if (!isDragging) return;
+      if (dragStart.x === null && dragStart.y === null) return;
 
       const dx = (e.clientX - dragStart.x) * (viewBox.width / svg.clientWidth);
       const dy = (e.clientY - dragStart.y) * (viewBox.height / svg.clientHeight);
+
+      // if (sumDx > 200 || sumDx < -200) return
+      // setSumDx(sumDx + dx)
+      // console.log("sum dx", sumDx)
+
+      let sdx = sumDx + dx
+      console.log("sum dx", sumDx)
+
+      if (sdx > 200 || sdx < -200) return
+
+      setSumDx(sdx)
 
       setViewBox(prev => ({
         x: prev.x - dx,
@@ -363,11 +474,19 @@ export const Render = () => {
         height: prev.height
       }));
 
+      // console.log("viewBox", viewBox.x, viewBox.y)
+      // if (viewBox.x > 300 || viewBox.y > 300 || viewBox.x < -300 || viewBox.y < -300) {
+      //   handleMouseUp()
+      //   console.log("done")
+      //   return
+      // } RECALL: Look at this later.
+
       setDragStart({ x: e.clientX, y: e.clientY });
     };
 
     const handleMouseUp = () => {
-      setIsDragging(false);
+      // setIsDragging(false);
+      setDragStart({x: null, y: null})
     };
 
     const handleDoubleClick = () => {
@@ -375,7 +494,6 @@ export const Render = () => {
     };
 
     svg.addEventListener('wheel', handleWheel, { passive: false });
-    svg.addEventListener('dblclick', handleDoubleClick);
     svg.addEventListener('mousedown', handleMouseDown);
     svg.addEventListener('mousemove', handleMouseMove);
     svg.addEventListener('mouseup', handleMouseUp);
@@ -383,7 +501,6 @@ export const Render = () => {
 
     return () => {
       svg.removeEventListener('wheel', handleWheel);
-      svg.removeEventListener('dblclick', handleDoubleClick);
       svg.removeEventListener('mousedown', handleMouseDown);
       svg.removeEventListener('mousemove', handleMouseMove);
       svg.removeEventListener('mouseup', handleMouseUp);
@@ -392,19 +509,19 @@ export const Render = () => {
   }, [viewBox, isDragging, dragStart]);
 
   const handleAddScope = (id) => {
-
-    setScopeList([...scopeList, id])
+    const filteredPVR = PVR.filter(p => p.comp === id);
+    setScopeList([...scopeList, filteredPVR[0]])
   }
 
   return (
     <div className="w-full h-screen relative cursor-default">
 
       <div className='absolute top-[150px] w-screen'>
-        {/* <Canvas /> */}
+        <Canvas setViewBox={setViewBox} isDragging={isDragging} setDrawCoords={setDrawCoords} setActivateTool={setActivateTool}/>
       </div>
 
-      <div className='absolute bottom-[40px] w-full'>
-        <Sine ids={scopeList}/>
+      <div className='absolute bottom-[40px] w-fit left-[28%]'>
+        {/* <Sine pvr={scopeList}/> */}
       </div>
 
       {/* transform -translate-x-1/2 */}
@@ -429,7 +546,7 @@ export const Render = () => {
             backdrop-blur-md border-white/10 shadow-lg items-center'>
 
           <div className='space-x-[44px] flex items-center w-[24%] pl-[18px]'>
-            <p className='text-[24px]'>Home</p>
+            <p className='text-[18px]'>Home</p>
             <p className='text-[18px]'>Options</p>
             <p className='text-[18px]'>Save</p>
           </div>
@@ -444,11 +561,11 @@ export const Render = () => {
             </button>
 
             {isOpen && (
-              <div className="absolute left-0 mt-2 w-48 bg-white border border-gray-300 shadow-lg rounded-lg p-2">
+              <div className="absolute left-0 mt-2 w-48 bg-white border border-gray-300 shadow-lg rounded-lg p-2 text-black">
                 <button
                   onClick={() => handleToolClick("Resistor")}
-                  className={`block w-full text-left px-4 py-2 rounded ${
-                    activeClick === "Resistor" ? "bg-orange-500 text-white" : "bg-orange-200"
+                  className={`block w-full text-left px-4 py-1 mt-1 rounded-[44px] ${
+                    activeClick === "Resistor" && "bg-black text-white"
                   }`}
                 >
                   Resistor
@@ -456,8 +573,8 @@ export const Render = () => {
 
                 <button
                   onClick={() => handleToolClick("Capacitor")}
-                  className={`block w-full text-left px-4 py-2 rounded ${
-                    activeClick === "Capacitor" ? "bg-green-500 text-white" : "bg-green-200"
+                  className={`block w-full text-left px-4 py-1 mt-1 rounded-[44px] ${
+                    activeClick === "Capacitor" && "bg-black text-white"
                   }`}
                 >
                   Capacitor
@@ -465,8 +582,8 @@ export const Render = () => {
 
                 <button
                   onClick={() => handleToolClick("StepWire")}
-                  className={`block w-full text-left px-4 py-2 rounded ${
-                    activeClick === "StepWire" ? "bg-yellow-500 text-white" : "bg-yellow-200"
+                  className={`block w-full text-left px-4 py-1 mt-1 rounded-[44px] ${
+                    activeClick === "StepWire" && "bg-black text-white"
                   }`}
                 >
                   Wire
@@ -474,8 +591,8 @@ export const Render = () => {
 
                 <button
                   onClick={() => handleToolClick("Inductor")}
-                  className={`block w-full text-left px-4 py-2 rounded ${
-                    activeClick === "Inductor" ? "bg-purple-500 text-white" : "bg-purple-200"
+                  className={`block w-full text-left px-4 py-1 mt-1 rounded-[44px] ${
+                    activeClick === "Inductor" && "bg-black text-white"
                   }`}
                 >
                   Inductor
@@ -483,8 +600,8 @@ export const Render = () => {
 
                 <button
                   onClick={() => handleToolClick("DCVoltageSource")}
-                  className={`block w-full text-left px-4 py-2 rounded ${
-                    activeClick === "DCVoltageSource" ? "bg-purple-500 text-white" : "bg-purple-200"
+                  className={`block w-full text-left px-4 py-1 mt-1 rounded-[44px] ${
+                    activeClick === "DCVoltageSource" && "bg-black text-white"
                   }`}
                 >
                   DC Voltage
@@ -522,6 +639,15 @@ export const Render = () => {
             </div>
           </div>
 
+          <div className='flex space-x-[12px]' onClick={() => setIsDragging(!isDragging)}>
+            <div>
+              {isDragging ? "Active" : "Not Active"}
+            </div>
+            <div>
+              <CapacitorIcon />
+            </div>
+          </div>
+
           <div className=" flex px-[24px] gap-x-[44px] text-white"> 
             <button
               onClick={() => changeOrientation()}
@@ -555,7 +681,7 @@ export const Render = () => {
           </div> */}
 
           <div className='flex justify-between w-[100%] px-[12px] mb-[12px]'>
-            <body className='border border-[#494949] px-[6px] rounded-[24px] w-fit '>
+            <div className='border border-[#494949] px-[6px] rounded-[24px] w-fit '>
               <svg width="60" viewBox="0 0 400 200">
                 <circle cx="100" cy="100" r="30" fill={existingPoint ? "#3498db" : "#e74c3c"} />
                 
@@ -563,7 +689,7 @@ export const Render = () => {
                 
                 <circle cx="300" cy="100" r="30" fill={existingPoint ? "#3498db" : "#e74c3c"} />
               </svg>
-            </body>
+            </div>
 
             <p onClick={()=>setThisSelected(null)} className='text-[#7c7c7c] border border-[#494949] hover:text-[#202020] hover:bg-[#636363] px-[14px] rounded-[24px] flex items-center'>Clear</p>
           </div>
@@ -673,6 +799,7 @@ export const Render = () => {
             <circle cx="2.5" cy="2.5" r="0.2" fill="gray" />
           </pattern>
         </defs>
+
         
         <rect 
           x={viewBox.x} 
@@ -701,6 +828,7 @@ export const Render = () => {
           ))
         }
       </svg>
+      
       <style>
         {`
           @keyframes dash {

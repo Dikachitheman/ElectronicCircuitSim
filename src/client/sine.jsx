@@ -1,19 +1,68 @@
-export default function Sine({ids}) {
+import { useEffect, useRef, useState } from 'react';
+import { CapacitorIcon } from '../assets/svgIcon';
+
+export default function Sine({pvr}) { // RECALL: use this instead pvr2
   const [isActive, setIsActive] = useState(false);
-  const [current, setCurrent] = useState(null)
+  const [current, setCurrent] = useState(null);
+  const [pvr2, setPVR] = useState(null)
+
+  useEffect(() => {
+    // Assuming your array is stored in a variable called 'data'
+    const data = [
+      {
+        comp: 1,
+        imax: -0.04785513731757324,
+        impedance: "4ohms",
+        type: "Resistor",
+        vmax: -0.19142054927029295
+      },
+      {
+        comp: 2,
+        imax: -0.04785513731757324,
+        impedance: "-j0.0019904458598726115uf",
+        type: "Capacitor",
+        vmax: -0.00009525305994739896
+      },
+      {
+        comp: 3,
+        imax: -0.04785513731757324,
+        impedance: "-5VDC",
+        type: "DCVoltageSource",
+        vmax: NaN
+      },
+      {
+        comp: 4,
+        imax: -0.04785513731757324,
+        impedance: "j100.48H",
+        type: "Inductor",
+        vmax: -4.808484197669759
+      }
+    ];
+
+    setPVR(data)
+}, [])
+
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-2">
       <div className='flex'>
         <button
           onClick={() => setIsActive((prev) => !prev)}
-          className="px-4 py-2 bg-blue-500 text-white rounded shadow"
+          className="px-4 py-2 bg-[#b0ff06] text-[#05250e] font-semibold rounded-[24px] mr-2 shadow"
         >
-          {isActive ? "Stop Wave" : "Start Wave"}
+          {isActive ? "Stop Oscilloscope" : "Start Oscilloscope"}
         </button>
-        <div className='flex text-white'>
-          {ids.map((item) => (
-            <div onClick={()=>setCurrent(item)} className='border px-[14px]'>
-              {item}
+        <div className='flex text-white space-x-1'>
+          {pvr2 && pvr2.map((item) => (
+            <div onClick={()=>setCurrent(item)} className='rounded-[12px] text-black border border-[#d5d5d5] px-[14px] flex items-center bg-white/50 backdrop-blur-[12px]'>
+              <div className='mr-[8px]'>
+                {item.comp}
+              </div>
+              <div className='mr-[12px]'>
+                {item.type}
+              </div>
+              <div>
+                <CapacitorIcon />
+              </div>
             </div>
           ))}
         </div>
@@ -22,9 +71,6 @@ export default function Sine({ids}) {
     </div>
   );
 }
-
-import { useEffect, useRef, useState } from 'react';
-import { dummy } from '../engine/nodalv2';
 
 // const SineWave = () => {
 //   const canvasRef = useRef(null);
@@ -79,19 +125,18 @@ function SineWave({current}) {
   const animationRef = useRef(null);
   const stateRef = useRef(null)
 
-  let d = dummy(current) // current is selected value
   let isAmplitude = false
   let phaseOffset = 0
   let wasAmplitude = false
   let x = 0;
-  let y = d?.vmax || null;
-
+  let y = current?.vmax || null; // RECALL: fix this using scaling function
+  let yb = y
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
     const charge = (x) => {
-      let coef = 60;
+      let coef = 60; // RECALL: use vmax where theres 60
       let rc = 14 * 30;
       let exp = (-1 * x ) / rc;
       
@@ -128,6 +173,10 @@ function SineWave({current}) {
       ctx.fillStyle = "#a7ff0f";
       ctx.lineWidth = 2;
       ctx.fillRect(x, y, 2, 2)
+
+      ctx.fillStyle = "#a7ff0f";
+      ctx.lineWidth = 2;
+      ctx.fillRect(x, yb, 2, 2)
       
       x = x + 2.5;
 
@@ -135,13 +184,14 @@ function SineWave({current}) {
         if (isAmplitude) {
 
           if (!wasAmplitude) {
-            // Calculate the phase offset needed to make the sine wave start at the current y position
             const currentPhase = Math.asin((y - canvas.height / 2) / 60) / 0.04;
             phaseOffset = x - currentPhase;
             wasAmplitude = true;
           }
           
           y = canvas.height / 2 - 60 * Math.sin(0.04 * x - phaseOffset);
+
+          yb = canvas.height / 2 - 60 * Math.sin(0.04 * x - phaseOffset + 90);
 
         } else {
           y = charge(x); // Offset by initial x
@@ -236,25 +286,26 @@ function SineWave({current}) {
   }
 
   return (
-    <div className="flex justify-center">
-      <div className='text-white flex flex-col space-y-2'>
+    <div className="flex justify-center p-[6px] bg-white/20 backdrop-blur-lg border border-white/30 rounded-lg shadow-lg">
+
+      <div className=' flex space-x-[16px] bg-[#0c0c0c] rounded-lg w-[40%] text-[#152110]'>
         <button 
-          className="px-4 py-2 bg-blue-500 rounded-md hover:bg-blue-600" 
+          className="px-4 py-2 bg-[#b3b785]  w-[90px] h-fit rounded-md hover:bg-blue-600" 
           onClick={() => handleClick('start')}
         >
           Start
         </button>
         <button 
-          className="px-4 py-2 bg-red-500 rounded-md hover:bg-red-600" 
+          className="px-4 py-2 bg-[#a1845f] w-[90px] h-fit rounded-md hover:bg-red-600" 
           onClick={() => handleClick('end')}
         >
           End
         </button>
         <p>{state === 'start' ? "Charging/Oscillating" : state === 'end' ? "Discharging" : "Ready"}</p>
       </div>
-      <div className="ml-4 flex w-fit justify-center items-center bg-white/10 backdrop-blur-lg border border-white/30 rounded-lg shadow-lg overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-300/20 via-slate-100/10 to-gray-500/30 mix-blend-overlay"></div>
-        <canvas ref={canvasRef} width={900} height={200} />
+      <div className="ml-[2px] flex w-fit justify-center items-center bg-black/35 backdrop-blur-lg rounded-lg overflow-hidden">
+        <div className="absolute bg-gradient-to-br from-slate-300/20 via-slate-100/10 to-gray-500/30 mix-blend-overlay"></div>
+        <canvas ref={canvasRef} width={700} height={200} />
       </div>
     </div>
   );

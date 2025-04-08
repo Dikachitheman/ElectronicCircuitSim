@@ -111,19 +111,15 @@ export const Canvas = () => {
             const keys = Object.keys(dsBuffer).map(Number).sort((a, b) => a - b);
             
             if (keys.length > 0) {
-                // Set fill style for points
-                context.fillStyle = strokeColor; // Use the current stroke color or set another color
+                // Move to first point
+                context.moveTo(keys[0] * div, dsBuffer[keys[0]] * div);
                 
-                // Draw individual points
-                for (let i = 0; i < keys.length; i++) {
-                    const x = keys[i] * div;
-                    const y = dsBuffer[keys[i]] * div;
-                    
-                    // Draw a circle at each point
-                    context.beginPath();
-                    context.arc(x, y, lineWidth / 2, 0, Math.PI * 2); // Use lineWidth as radius or adjust as needed
-                    context.fill();
+                // Draw lines to subsequent points
+                for (let i = 1; i < keys.length; i++) {
+                    context.lineTo(keys[i] * div, dsBuffer[keys[i]] * div);
                 }
+                
+                context.stroke();
             }
         } else {
             // Restore original drawing (you might want to save the original state)

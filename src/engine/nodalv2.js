@@ -1,102 +1,70 @@
 
-// export const e = [
-//     {
-//       "components": [1, 4],
-//       "coords": {
-//         "x": 126.21808624267578,
-//         "y": 347.9118347167969
-//       },
-//       "id": "J1",
-//       "type": ["StepWire", "Voltage"],
-//       "value": ["none", "4V"],
-//       "polar": "positve"
-//     },
-//     {
-//       "components": [1, 2, 3],
-//       "coords": {
-//         "x": 376.7981262207031,
-//         "y": 347.9118347167969
-//       },
-//       "id": "J2",
-//       "type": ["StepWire", "StepWire", "Voltage"],
-//       "value": ["none", "none", "4V"],
-//       "polar": "negative"
-//     },
-//     {
-//       "components": [2, 11],
-//       "coords": {
-//         "x": 657.6566162109375,
-//         "y": 347.9118347167969
-//       },
-//       "id": "J3",
-//       "type": ["StepWire", "Resistor"],
-//       "value": ["none", "4Ohms"]
-//     },
-//     {
-//       "components": [3, 9, 10],
-//       "coords": {
-//         "x": 376.7981262207031,
-//         "y": 203.82830810546875
-//       },
-//       "id": "J4",
-//       "type": ["Voltage", "Resistor", "Resistor"],
-//       "value": ["4V", "4Ohms", "4Ohms"],
-//       "polar": "positive"
-//     },
-//     {
-//       "components": [4, 5, 10],
-//       "coords": {
-//         "x": 120.99767303466797,
-//         "y": 202.7842254638672
-//       },
-//       "id": "J5",
-//       "type": ["Voltage", "StepWire", "Resistor"],
-//       "value": ["4V", "none", "4Ohms"],
-//       "polar": "negative"
-//     },
-//     {
-//       "components": [5, 6],
-//       "coords": {
-//         "x": 107.4245834350586,
-//         "y": 57.6566162109375
-//       },
-//       "id": "J6",
-//       "type": ["StepWire", "Voltage"],
-//       "value": ["none", "4V"],
-//       "polar": "positive"
-//     },
-//     {
-//       "components": [6, 7],
-//       "coords": {
-//         "x": 365.3132019042969,
-//         "y": 50
-//       },
-//       "id": "J7",
-//       "type": ["Voltage", "Resistor"],
-//       "value": ["4V", "4Ohms"],
-//       "polar": "negative"
-//     },
-//     {
-//       "components": [7, 8],
-//       "coords": {
-//         "x": 685.8468627929688,
-//         "y": 50
-//       },
-//       "id": "J8",
-//       "type": ["Resistor", "StepWire"],
-//       "value": ["4Ohms", "none"]
-//     },
-//     {
-//       "components": [8, 9, 11],
-//       "coords": {
-//         "x": 671.2296752929688,
-//         "y": 193.61949157714844
-//       },
-//       "id": "J9",
-//       "type": ["StepWire", "Resistor", "Resistor"],
-//       "value": ["none", "4Ohms", "4Ohms"]
-//     }
-//   ]
+const e = [
+    {
+      components: [1, 2],
+      coords: { x: 264.05859375, y: 225.171875 },
+      id: "J1",
+      polar: "none",
+      type: ["Resistor", "Inductor"],
+      value: ["4ohms", "2H"]
+    },
+    {
+      components: [1, 4, 5],
+      coords: { x: 339.50390625, y: 230.26953125 },
+      id: "J2",
+      polar: "none",
+      type: ["Resistor", "Inductor", "Resistor"],
+      value: ["4ohms", "2H", "4ohms"]
+    },
+    {
+      components: [2, 3],
+      coords: { x: 259.98046875, y: 285.6640625 },
+      id: "J3",
+      polar: "positive",
+      type: ["Inductor", "DCVoltageSource"],
+      value: ["2H", "5VDC"]
+    },
+    {
+      components: [3, 4, 6],
+      coords: { x: 337.125, y: 297.21875 },
+      id: "J4",
+      polar: "none",
+      type: ["DCVoltageSource", "Inductor", "Capacitor"],
+      value: ["5VDC", "2H", "10uf"]
+    },
+    {
+      components: [5, 7, 9],
+      coords: { x: 403.0546875, y: 238.0859375 },
+      id: "J5",
+      polar: "none",
+      type: ["Resistor", "DCVoltageSource", "Inductor"],
+      value: ["4ohms", "5VDC", "2H"]
+    },
+    {
+      components: [6, 7, 8],
+      coords: { x: 339.50390625, y: 297.55859375 },
+      id: "J6",
+      polar: "none",
+      type: ["Capacitor", "DCVoltageSource", "Resistor"],
+      value: ["10uf", "5VDC", "4ohms"]
+    },
+    {
+      components: [8, 10],
+      coords: { x: 430.7666931152344, y: 322.4473876953125 },
+      id: "J7",
+      polar: "negative",
+      type: ["Resistor", "DCVoltageSource"],
+      value: ["4ohms", "5VDC"]
+    },
+    {
+      components: [9, 10],
+      coords: { x: 471.6123046875, y: 263.0668029785156 },
+      id: "J8",
+      polar: "positive",
+      type: ["Inductor", "DCVoltageSource"],
+      value: ["2H", "5VDC"]
+    }
+  ];
 
 const reflection = (VLRItem) => {
     const reflectionVLR = []
@@ -242,26 +210,43 @@ function findCommonValues(array1, array2) {
 const Impedance = (value, type) => {
 
     let z = null
-    let f = 8
-    
+    let f = 8 // RECALL: f is 0 in DC. capacitor impedance is infinity and zero(0) in inductor. Inductor acts as short circuit
+    let reactance = null
     try {
         if (type === "Resistor") {
             return value
         } else if (type === "DCVoltageSource") {
             return value
         } else if (type === "Capacitor") {
+
+            value = value.replace("uf", "")
+            value = Number(value)
             // reactance(X) = 1 / 2fpC
-            let reactance = 1 / ( 2 * f * 3.14 * value)
+            reactance = 1 / ( 2 * f * 3.14 * value)
     
             // impedance = -jX
-            z = -1 * Math.sqrt(-1) * reactance
+            // z = -1 * Math.sqrt(-1) * reactance
+            let imaginaryComp = "-j"
+            reactance = String(reactance)
+            reactance = reactance.concat("uf")
+            reactance = imaginaryComp.concat(reactance)
 
         } else if (type === "Inductor") {
+
+            value = value.replace("H", "")
+            value = Number(value)
+
             // reactance(X) = 2fpL
-            let reactance = 2 * f * 3.14 * value
+            reactance = 2 * f * 3.14 * value
     
             // impedance = jX
-            z = Math.sqrt(-1) * reactance
+            // z = Math.sqrt(-1) * reactance
+
+            let imaginaryComp = "j"
+            reactance = String(reactance)
+            reactance = reactance.concat("H")
+            reactance = imaginaryComp.concat(reactance)
+
         } else {
             console.log("Type doesn't exist ", type)
             // throw new Error("Invalid type. Type must be 'Resistor', 'Conductor', or 'Inductor'.");
@@ -270,15 +255,34 @@ const Impedance = (value, type) => {
         console.error("Error:", error.message);
     }
 
+    z = reactance // RECALL: Temporary
     return z
 }
 
-function findCommonValuesWithIndex(info, array1, array2) {
+function findCommonValuesWithIndex(first, second, array1, array2) {
     for (let i = 0; i < array1.length; i++) {
         if (array2.includes(array1[i])) {
 
-            let value = Impedance(info.value[i], info.type[i])
-            return {comp: array1[i], info: value, type: info.type[i], polar: info?.polar};
+            const commonValue = array1[i];
+            const j = array2.indexOf(commonValue);
+
+            let value = Impedance(first.value[i], first.type[i])
+
+            if (first.type[i] === "DCVoltageSource" && value[0] !== "-") {
+                if (first.polar === "negative") {
+                    value = `-${value}`
+                    console.log(value, first.id)
+                }
+            }
+
+            if (second.type[j] === "DCVoltageSource" && value[0] !== "-") {
+                if (second.polar === "positive") {
+                    value = `-${value}`
+                    console.log(value, first.id)
+                }
+            }
+
+            return {comp: array1[i], info: value, type: first.type[i], polar: first?.polar};
             // return {comp: array1[i], info: info.value[i], type: info.type[i], polar: info?.polar};
         }
     }
@@ -290,7 +294,7 @@ function getComponent(circuit, j, k) {
         if (circuit[i].id === j) {
             for (let n = 0; n < circuit.length; n++) {
                 if (circuit[n].id === k) {
-                    return findCommonValuesWithIndex( circuit[i], circuit[i].components, circuit[n].components);
+                    return findCommonValuesWithIndex( circuit[i], circuit[n], circuit[i].components, circuit[n].components);
                 }
             }
         }
@@ -331,7 +335,7 @@ function handleFindPairs (loops, neighborStore) {
 
     }
 
-    return neighborStore
+    return neighborStore //DEBUG: in neighnorstore, some which: [] fields dont follow the loop direction
 }
 
 // ensure all args being passed are accurate, as first debugging step
@@ -344,14 +348,12 @@ export const getCurrentinEachEdge = (neighborStore, circuit) => {
             
             // If the component is not in the map, add it with the current index
             if (!(comp.comp in currentMap)) {
-                currentMap[comp.comp] = {value: comp.info, loopIndex: neighborStore[n].index, details: comp}
+                currentMap[comp.comp] = {value: comp.info, loopIndex: [neighborStore[n].index], details: comp}
 
             } else {
                 // If the component already exists, store the first and new index
                 currentMap[comp.comp] = {value: comp.info, loopIndex: [currentMap[comp.comp].loopIndex, neighborStore[n].index], details: comp}
-
             }
-
         }
     }
 
@@ -373,14 +375,13 @@ export function analyzeCircuit(circuit, loops) {
 
     for (let i = 0; i < loops.length; i++) {
 
-        matrixRow = [0, 0, 0]
+        const matrixRow = Array(loops.length).fill(0);
 
         for (let j = 0; j < loops[i].length - 1; j++) {
 
             let currentLoop = loops[i]
 
             let component = getComponent(circuit, currentLoop[j], currentLoop[j+1])
-
             component.type !== "StepWire" && ( rowValue.push(component.info) )
             
         }
@@ -393,7 +394,6 @@ export function analyzeCircuit(circuit, loops) {
             matrixRow.splice(item.index, 1, [component.info])
         })
 
-        console.log("row", rowValue)
         matrixRow.splice(i, 1, rowValue)
 
         rowValue = []
@@ -401,8 +401,8 @@ export function analyzeCircuit(circuit, loops) {
         gaussianMatrix.push(matrixRow)
     }
     
-    console.log(gaussianMatrix)
-    return gaussianMatrix
+    console.log("gaussianMatrix", gaussianMatrix)
+    return {matrix: gaussianMatrix, cmap}
 }
 
 // // Example usage:

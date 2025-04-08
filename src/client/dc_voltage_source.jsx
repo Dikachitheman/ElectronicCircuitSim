@@ -159,7 +159,7 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
     const plusPoint = transformPoint(0, -symbolOffset);
     const minusPoint = transformPoint(0, symbolOffset);
 
-    console.log("p1", p1, "startx", startX, "starty", startY, "midpoint", midPoint, "endx", endX, "endy", endY, "p2", p2)
+    // console.log("p1", p1, "startx", startX, "starty", startY, "midpoint", midPoint, "endx", endX, "endy", endY, "p2", p2)
   
     /** temp offset to fix bug */
     return {

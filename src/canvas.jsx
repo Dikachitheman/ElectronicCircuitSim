@@ -1,20 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-export const Canvas = () => {
+export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool}) => {
     const canvasRef = useRef(null);
+    const contextRef = useRef(null);
     const [isPainting, setIsPainting] = useState(false);
     const [lineWidth, setLineWidth] = useState(5);
     const [strokeColor, setStrokeColor] = useState('#FF0DF4');
     const [dsBuffer, setDsBuffer] = useState(null)
     const [preview, setPreview] = useState(false)
-    const contextRef = useRef(null);
-    const [isActive, setIsActive] = useState(false)
+    const [isActive, setIsActive] = useState(true)
 
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        
+
         // Set canvas size
         canvas.width = window.innerWidth - 60; // Subtract some offset
         canvas.height = window.innerHeight - 200; // Subtract some offset for toolbar
@@ -42,14 +42,22 @@ export const Canvas = () => {
         };
     }, [lineWidth, strokeColor]);
 
+    useEffect(() => {
+        contextRef.current.beginPath()
+        contextRef.current.rect(800, 200, 20, 20)
+        contextRef.current.fillStyle = "pink"
+        contextRef.current.fill()
+    }, [])
+
+
     // Update context when drawing settings change
     useEffect(() => {
+
         if (contextRef.current) {
-            console.log("ctx", contextRef)
-            console.log("current", contextRef.current)
             contextRef.current.lineWidth = lineWidth;
             contextRef.current.strokeStyle = strokeColor;
         }
+
     }, [lineWidth, strokeColor]);
 
     const startDrawing = (e) => {
@@ -65,15 +73,13 @@ export const Canvas = () => {
     };
 
     const downScale = (x, y) => {
-        let div = 10
+        let div = 6
 
-        // const scaledX = Math.ceil(x / div);
-        // const scaledY = Math.ceil(y / div);
+        const scaledX = Math.ceil(x / div);
+        const scaledY = Math.ceil(y / div);
 
-        const scaledX = x
-        const scaledY = y
-
-        // console.log("x", x, "y", y)
+        // const scaledX = x
+        // const scaledY = y
 
         setDsBuffer(prevBuffer => {
             const newBuffer = {...prevBuffer};
@@ -93,10 +99,55 @@ export const Canvas = () => {
         const y = e.clientY - rect.top;
         
         contextRef.current.lineTo(x, y);
-        // console.log(x,y)
         let dcb = downScale(x,y)
         contextRef.current.stroke();
     };
+
+    function dsBuffertoArray(dict) {
+        if (dict) {
+            return Object.entries(dict).map(([key, value]) => {
+                return [parseFloat(key), value];
+            });
+        }
+    }
+
+    const coordDistance = (xa, ya, xb, yb) => {
+        // d=√((x2 – x1)² + (y2 – y1)²)
+
+        let offset = 0.01
+
+        let dx = xb - xa
+        let dy = yb - ya
+        let dx2 = dx * dx
+        let dy2 = dy * dy
+ 
+        let d = Math.sqrt(dx2 + dy2)
+
+        return d
+    }
+
+    const findVertices = (a) => {
+        let result = 0;
+        let farthestPoints = [null, null];
+        
+        if (a?.length > 0) {
+            for (let i = 0; i < a.length; i++) {
+                for (let j = i + 1; j < a.length; j++) {
+                    let d = coordDistance(a[i][0], a[i][1], a[j][0], a[j][1]);
+                    
+                    if (d > result) {
+                        result = d;
+                        farthestPoints = [a[i], a[j]];
+                    }
+                }
+            }
+        }
+        
+        return {
+            maxDistance: result,
+            points: farthestPoints
+        };
+    }
 
     const previewDS = () => {
         setPreview(!preview);
@@ -116,19 +167,21 @@ export const Canvas = () => {
             const keys = Object.keys(dsBuffer).map(Number).sort((a, b) => a - b);
             
             if (keys.length > 0) {
-                // Move to first point
-                context.moveTo(keys[0] * div, dsBuffer[keys[0]] * div);
+                // Set fill style for points
+                context.fillStyle = strokeColor; // Use the current stroke color or set another color
                 
-                // Draw lines to subsequent points
-                for (let i = 1; i < keys.length; i++) {
-                    context.lineTo(keys[i] * div, dsBuffer[keys[i]] * div);
+                // Draw individual points
+                for (let i = 0; i < keys.length; i++) {
+                    const x = keys[i] * div + 500;
+                    const y = dsBuffer[keys[i]] * div + 300;
+                    
+                    // Draw a circle at each point
+                    context.beginPath();
+                    context.arc(x, y, lineWidth / 2, 0, Math.PI * 2); // Use lineWidth as radius or adjust as needed
+                    context.fill();
                 }
-                
-                context.stroke();
             }
         } else {
-            // Restore original drawing (you might want to save the original state)
-            // For now, just clear
             context.clearRect(0, 0, canvas.width, canvas.height);
         }
     };
@@ -136,21 +189,44 @@ export const Canvas = () => {
     const stopDrawing = () => {
         contextRef.current.closePath();
         setIsPainting(false);
-        console.log(dsBuffer)
+        let dsArray = dsBuffertoArray(dsBuffer)
+
+        const findVerticesPromise = new Promise((resolve) => {
+            let vertices = findVertices(dsArray)
+            resolve(vertices)
+        })
+
+        findVerticesPromise
+            .then(vertices => {
+                setDrawCoords(vertices.points)
+            })
     };
 
     const clearCanvas = () => {
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
         context.clearRect(0, 0, canvas.width, canvas.height);
+        setDsBuffer(null)
+        setDrawCoords(null)
     };
+
+    const handleActivateTool = () => {
+
+        Promise.resolve()
+            .then(() => {
+                setActivateTool(true)
+            })
+                .then(() => {
+                    clearCanvas()
+                })
+    }
 
     return (
         <div className="">
 
             {
                 isActive && (
-                    <div className=" border">
+                    <div className=" ">
                         <canvas
                             id="drawing-board"
                             ref={canvasRef}
@@ -158,7 +234,7 @@ export const Canvas = () => {
                             onMouseMove={draw}
                             onMouseUp={stopDrawing}
                             onMouseLeave={stopDrawing}
-                            style={{ border: '11px solid #111'  }}
+                            // style={{ border: '11px solid #111'  }}
                         />
                     </div>
                 )
@@ -193,10 +269,10 @@ export const Canvas = () => {
                     />
                 </div>
 
-                <button onClick={previewDS}>Downscale</button>
-                <button onClick={clearCanvas}>Clear</button>
-
-                <button onClick={() => setIsActive(!isActive)}>Eye</button>
+                <button className='ml-[14px] mt-[22px]' onClick={previewDS}>Downscale</button>
+                <button className='ml-[14px] mt-[22px]' onClick={clearCanvas}>Clear</button>
+                <button className='ml-[14px] mt-[22px]' onClick={() => setIsActive(!isActive)}>Eye</button>
+                <button className='ml-[14px] mt-[22px]' onClick={() => handleActivateTool()}>Activate</button>
             </div>
 
         </div>
