@@ -6,12 +6,12 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
 
   
   const returnCoords = (e) => {
-    // console.log("e", e)
+    console.log("e", e)
       if (e === 'start') {
-        // console.log("points start", points.start)
+        console.log("points start", pointA)
         setExistingPoint(pointA)
       } else if (e === 'end') {
-        // console.log("points end", points.end)
+        console.log("points end", pointB)
         setExistingPoint(pointB)
       }
     }
@@ -169,7 +169,6 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
   const getComponentPath = () => {
     switch (type) {
       case 'Capacitor':
-        // console.log("type", type)
         return generateCapacitorPath(pointA, pointB);
       case 'Inductor':
         return generateInductorPath(pointA, pointB);

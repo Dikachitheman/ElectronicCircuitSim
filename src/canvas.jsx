@@ -10,7 +10,6 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
     const [preview, setPreview] = useState(false)
     const [isActive, setIsActive] = useState(true)
 
-
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -42,12 +41,12 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
         };
     }, [lineWidth, strokeColor]);
 
-    useEffect(() => {
-        contextRef.current.beginPath()
-        contextRef.current.rect(800, 200, 20, 20)
-        contextRef.current.fillStyle = "pink"
-        contextRef.current.fill()
-    }, [])
+    // useEffect(() => {
+    //     contextRef.current.beginPath()
+    //     contextRef.current.rect(800, 200, 20, 20)
+    //     contextRef.current.fillStyle = "pink"
+    //     contextRef.current.fill()
+    // }, [])
 
 
     // Update context when drawing settings change
@@ -149,6 +148,26 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
         };
     }
 
+    const downloadImage = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+    
+        // Get the image data as a data URL (PNG format by default)
+        const imageDataURL = canvas.toDataURL('image/png');
+        const uuid = crypto.randomUUID();
+        // Create a temporary link element
+        const downloadLink = document.createElement('a');
+        downloadLink.href = imageDataURL;
+        downloadLink.download = `${uuid}.png`; // Set the filename
+    
+        // Programmatically click the link to trigger the download
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink); // Clean up the temporary link
+
+        clearCanvas()
+    }
+
     const previewDS = () => {
         setPreview(!preview);
         
@@ -221,12 +240,29 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
                 })
     }
 
+    const useKeyPress = (key, callback) => {
+        useEffect(() => {
+            const handleKeyDown = (event) => {
+            if (event.key.toLowerCase() === key.toLowerCase()) {
+                callback();
+            }
+            };
+        
+            window.addEventListener('keydown', handleKeyDown);
+            return () => window.removeEventListener('keydown', handleKeyDown);
+        }, [key, callback]);
+    };
+
+    useKeyPress("d", downloadImage)
+
+    useKeyPress("k", downloadImage)
+
     return (
         <div className="">
 
             {
                 isActive && (
-                    <div className=" ">
+                    <div className="border ">
                         <canvas
                             id="drawing-board"
                             ref={canvasRef}
@@ -268,7 +304,8 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
                         className='text-black'
                     />
                 </div>
-
+                
+                <button className='ml-[14px] mt-[22px]' onClick={downloadImage}>Download</button>
                 <button className='ml-[14px] mt-[22px]' onClick={previewDS}>Downscale</button>
                 <button className='ml-[14px] mt-[22px]' onClick={clearCanvas}>Clear</button>
                 <button className='ml-[14px] mt-[22px]' onClick={() => setIsActive(!isActive)}>Eye</button>

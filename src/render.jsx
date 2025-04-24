@@ -11,19 +11,29 @@ import Sine from './client/sine';
 import { analyzeCircuit } from './engine/nodalv2';
 import { Discrete } from './engine/formatMatrix';
 import { gaussian } from './engine/gaussian';
+import { HistoryClass, HistoryManager } from './client/utils/history';
+import { Pipeline } from './neural/pipeline';
 
 export const Render = () => {
 
   const svgRef = useRef(null);
-
+  const [file, setFile] = useState("Operational Amplifier")
+  const [folder, setFolder] = useState("RLC")
+  const [editingFolder, setEditingFolder] = useState(false);
+  const [editingFile, setEditingFile] = useState(false);
+  const [tempFolder, setTempFolder] = useState("");
+  const [tempFile, setTempFile] = useState("");
+  const [fileListOpen, setFileListOpen] = useState(false)
+  const [fileList, setFileList] = useState([])
   const [secondClick, setSecondClick] = useState(false)
   const [activeClick, setActiveClick] = useState(null)
   const [existingPoint, setExistingPoint] = useState(null)
   const [selection, setSelection] = useState([])
+  const selectionRef = useRef(selection);
   const [recentlyUsedTools, setRecentlyUsedTools] = useState([])
   const [selectionInstance, setSelectionInstance] = useState({})
   const [thisSelected, setThisSelected] = useState(null)
-  const [isVertical, setIsVertical] = useState('h')
+  const [isVertical, setIsVertical] = useState('none')
   const [change, setChange] = useState(false)
   const [isOpen, setIsOpen] = useState(false);
   const [isExisting, setIsExisting] = useState(true)
@@ -36,12 +46,22 @@ export const Render = () => {
   const [drawCoords, setDrawCoords] = useState(null)
   const [activateTool, setActivateTool] = useState(false)
   const [sumDx, setSumDx] = useState(0)
+  const [sumDy, setSumDy] = useState(0)
+  const [history, setHistory] = useState([])
+  const [branch, setBranch] = useState(0)
+  const branchRef = useRef(null)
+  const [prevHistoryId, setPrevHistoryId] = useState(null)
+  const [filteredSelection, setFilteredSelection] = useState([])
+  const [canvasClick, setCanvasClick] = useState(null)
+  const [activeTab, setActiveTab] = useState("prompt")
   const [viewBox, setViewBox] = useState({
     x: 0,
     y: 0,
     width: 580,
-    height: 560
+    height: 540
   });
+
+  const manager = HistoryManager.getInstance(selection);
 
   // useEffect(() => {
 
@@ -142,8 +162,8 @@ export const Render = () => {
     const svgPoint = point.matrixTransform(CTM.inverse());
 
     return {
-      x: Math.max(50, Math.min(750, svgPoint.x)),
-      y: Math.max(50, Math.min(350, svgPoint.y))
+      x: Math.max(-500, Math.min(1750, svgPoint.x)),
+      y: Math.max(-500, Math.min(1350, svgPoint.y))
     };
   };
 
@@ -237,22 +257,52 @@ export const Render = () => {
       setSelectionInstance({})
     }
   }
-
+ 
   const handleCanvasClick = (e) => {    
 
       const coords = screenToSVGCoords(e.clientX, e.clientY);
+      // const coords = {x: e.clientX, y: e.clientY}
 
       if (activeClick && !existingPoint) {
         if (secondClick) {
+          setCanvasClick(null)
           selectionInstance.coords.xB = isVertical === 'v' ? selectionInstance.coords.xA : coords.x
           selectionInstance.coords.yB = isVertical === 'h' ? selectionInstance.coords.yA : coords.y
           selection.pop()
           setSelection([...selection, selectionInstance])
-          setRecentlyUsedTools([...recentlyUsedTools, {type: selectionInstance.component, icon: <CapacitorIcon />}])
+          
+          setRecentlyUsedTools(prevTools => {
+            const updatedTools = { ...prevTools };
+            
+            const currentCompData = prevTools[selectionInstance.component] || { type: selectionInstance.component, icon: <CapacitorIcon />, number: 0 };
+            
+            // Update the number
+            updatedTools[selectionInstance.component] = {
+              ...currentCompData,
+              number: currentCompData.number + 1
+            };
+            
+            return updatedTools;
+          });
+
+          manager.setSelections([...selection, selectionInstance]);
+          let historyObject = new HistoryClass( "ADD", "comp", selectionInstance.id, branch + 1, "live")
+
+
+          if (prevHistoryId !== null && !Number.isNaN(prevHistoryId)) {
+            console.log("this happend", prevHistoryId)
+            setHistory([...history.slice(0, prevHistoryId + 1), historyObject.toHistoryEntry()])
+          } else {
+            console.log("that happend")
+            setHistory([...history, historyObject.toHistoryEntry()])
+          }
+          setBranch(branch + 1)
+          setPrevHistoryId(null)
           setSelectionInstance({})
           setSecondClick(false)
           setActiveClick(null)
         } else {
+          setCanvasClick({x: coords.x, y: coords.y})
           selectionInstance.coords.xA = coords.x 
           selectionInstance.coords.yA = coords.y
           setSelection([...selection, selectionInstance])
@@ -263,18 +313,45 @@ export const Render = () => {
       if (activeClick && existingPoint) {
           
         if (secondClick) {
+          setCanvasClick(null)
           selectionInstance.coords.xB = isVertical === 'v' ? selectionInstance.coords.xA : existingPoint.x
           selectionInstance.coords.yB = isVertical === 'h' ? selectionInstance.coords.yA : existingPoint.y
           selection.pop()
           setSelection([...selection, selectionInstance])
-          setRecentlyUsedTools([...recentlyUsedTools, {type: selectionInstance.component, icon: <CapacitorIcon />}])
+          
+          setRecentlyUsedTools(prevTools => {
+            const updatedTools = { ...prevTools };
+            
+            const currentCompData = prevTools[selectionInstance.component] || { type: selectionInstance.component, icon: <CapacitorIcon />, number: 0 };
+            
+            // Update the number
+            updatedTools[selectionInstance.component] = {
+              ...currentCompData,
+              number: currentCompData.number + 1
+            };
+            
+            return updatedTools;
+          });
+
+          manager.setSelections([...selection, selectionInstance]);
+          let historyObject = new HistoryClass( "ADD", "comp", selectionInstance.id, branch + 1, "live")
+
+          if (prevHistoryId !== null && !Number.isNaN(prevHistoryId)) {
+            setHistory([...history.slice(0, prevHistoryId + 1), historyObject.toHistoryEntry()])
+          } else {
+            setHistory([...history, historyObject.toHistoryEntry()])
+          }
+          setBranch(branch + 1)
+
+          // clean up
+          setPrevHistoryId(null)
           setSelectionInstance({})
           setSecondClick(false)
           setActiveClick(null)
           setExistingPoint(null)
 
         } else {
-
+          setCanvasClick({x: coords.x, y: coords.y})
           selectionInstance.coords.xA = existingPoint.x
           selectionInstance.coords.yA = existingPoint.y
 
@@ -304,7 +381,6 @@ export const Render = () => {
 
   const ElectricalComponent = ({ id, val, type, xA, xB, yA, thisSelected, setThisSelected, yB,  svgRef }) => {
     
-    console.log("selection ec", selection[id-1])
     const vert = selection[id - 1]['orientation']
     const componentMap = {
       StepWire: <StepWireA id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint}/>,
@@ -357,7 +433,7 @@ export const Render = () => {
   //   }
   // }, [activateTool, drawCoords, selectionInstance, activeClick]);
 
-  useEffect(() => {
+  const renderTool = async ({comp, value, xf, yf, xl, yl, orientation}, ctx=null, id=null) => {
 
     const coordDistance = (xa, ya, xb, yb) => {
       // d=√((x2 – x1)² + (y2 – y1)²)
@@ -374,46 +450,158 @@ export const Render = () => {
       return d
     }
 
-    if (activateTool === true && drawCoords) {
-      console.log("here")
-      const init = {id: selection.length + 1, component: "Capacitor", value: "10uf", orientation: isVertical, coords: {}}
+    let compId 
 
-      let e = {clientX: drawCoords[0][0] * 6, clientY: drawCoords[0][1] * 6, clientXB: drawCoords[1][0] * 6, clientYB: drawCoords[1][1] * 6}
-      const coordsA = screenToSVGCoords(e.clientX, e.clientY);
-      const coordsB = screenToSVGCoords(e.clientXB, e.clientYB);
+    if (ctx !== null) {
+      compId = ctx.get("id") || 1
+      ctx.set("id", parseFloat(compId) + 1)
+    } else {
+      compId = selection.length + 1
+    }
 
-      if (selection.length > 0) {
-        let result = 500; // distance of 50px or less. For now.
+    const init = {id: compId, component: comp, value: value, orientation: orientation, coords: {}}
+    let offsetx = 0
+    let offsety = 156
 
-        for (let i = 0; i < selection.length; i++) {
-          let xA = selection[i].coords.xA
-          let xB = selection[i].coords.xB
-          let yA = selection[i].coords.yA
-          let yB = selection[i].coords.yB
+    let e = 
+    {
+      clientX: xf + offsetx, 
+      clientY: yf + offsety, 
+      clientXB: xl + offsetx, 
+      clientYB: yl + offsety
+    }
 
-          let d = coordDistance(xA, yA, drawCoords[0][0] * 6, drawCoords[0][1] * 6 )
-          if (d < result) { result = d; coordsA.x = xA; coordsA.y = yA}
-          d = coordDistance(xB, yB, drawCoords[0][0] * 6, drawCoords[0][1] * 6 )
-          if (d < result) { result = d; coordsA.x = xB; coordsA.y = yA}
-          d = coordDistance(xA, yA, drawCoords[1][0] * 6, drawCoords[1][1] * 6 )
-          if (d < result) { result = d; coordsB.x = xA; coordsB.y = yB}
-          d = coordDistance(xB, yB, drawCoords[1][0] * 6, drawCoords[1][1] * 6 )
-          if (d < result) { result = d; coordsB.x = xA; coordsA.y = xB}
+    const coordsA = screenToSVGCoords(e.clientX, e.clientY);
+    const coordsB = screenToSVGCoords(e.clientXB, e.clientYB);
+
+    if (selection.length > 0) {
+
+      let result = 60; // distance of 50px or less. For now.
+      let resultB = 60
+
+      for (let i = 0; i < selection.length; i++) {
+        let xA = selection[i].coords.xA
+        let xB = selection[i].coords.xB
+        let yA = selection[i].coords.yA
+        let yB = selection[i].coords.yB
+
+        let d = coordDistance(xA, yA, coordsA.x, coordsA.y)
+        if (d < result) { 
+          result = d; 
+          coordsA.x = xA 
+          coordsA.y = yA
+        }
+
+        d = coordDistance(xB, yB, coordsA.x, coordsA.y)
+        if (d < result) { 
+          result = d; 
+          coordsA.x = xB 
+          coordsA.y = yB;
+
+        }
+
+        let db = coordDistance(xA, yA, coordsB.x, coordsB.y)
+        if (db < resultB) { 
+          resultB = db; 
+          coordsB.x = xA 
+          coordsB.y = yA;
+
+        }
+
+        db = coordDistance(xB, yB, coordsB.x, coordsB.y)
+        if (db < resultB) { 
+          resultB = db; 
+          coordsB.x = xB 
+          coordsB.y = yB
         }
       }
+    }
 
-      init.coords.xA = coordsA.x 
-      init.coords.yA = coordsA.y
-      init.coords.xB = isVertical === 'v' ? init.coords.xA : coordsB.x
-      init.coords.yB = isVertical === 'h' ? init.coords.yA : coordsB.y
-      setRecentlyUsedTools([...recentlyUsedTools, {type: init.component, icon: <CapacitorIcon />}])
-      setSelection([...selection, init])
-      setSelectionInstance({})
-      setActivateTool(false)
+    init.coords.xA = coordsA.x
+    init.coords.yA  = coordsA.y
+    init.coords.xB = orientation === 'v' ? init.coords.xA : coordsB.x
+    init.coords.yB = orientation === 'h' ? init.coords.yA : coordsB.y
+
+    setRecentlyUsedTools(prevTools => {
+      const updatedTools = { ...prevTools };
+      
+      const currentCompData = prevTools[init.component] || { type: init.component, icon: <CapacitorIcon />, number: 0 };
+      
+      // Update the number
+      updatedTools[init.component] = {
+        ...currentCompData,
+        number: currentCompData.number + 1
+      };
+      
+      return updatedTools;
+    });
+
+    setSelection(prev => {
+      const ar = [...prev, init]
+      selectionRef.current = ar; 
+      return ar
+    })
+
+    let selectionList = [...selection]
+
+    if (ctx !== null) {
+      selectionList = ctx.get("selection") || []
+      let updatedSelection =  [...selectionList, init]
+      ctx.set("selection", updatedSelection)
+
+      console.log("selectionlist", selectionList)
+      console.log("init", init)
+
+      manager.setSelections([...updatedSelection]);
+    }
+
+    manager.setSelections([...selectionList, init]);
+
+    let branchCount = ctx ? parseFloat(ctx.get("branch")) + 1 : branch + 1
+
+    if (Number.isNaN(branchCount)) {
+      branchCount = 1
+    }
+
+    let historyObject = new HistoryClass( "ADD", "comp", init.id, branchCount, "live")
+
+    setHistory(prev => {
+      if (prevHistoryId !== null && !Number.isNaN(prevHistoryId)) {
+        return [...prev.slice(0, prevHistoryId + 1), historyObject.toHistoryEntry()]
+      } else {
+        return [...prev, historyObject.toHistoryEntry()]
+      }
+    })
+    
+    const newval = ctx.get("branch") || 0
+    ctx.set("branch", parseFloat(newval) + 1)
+
+    setBranch(prev => {
+      let newval = prev + 1
+      branchRef.current = newval
+      return newval
+    })
+    setPrevHistoryId(() => null)
+    setSelectionInstance(() => ({}))
+    setActivateTool(() => false)
+  }
+
+  useEffect(() => {
+
+    if (activateTool === true && drawCoords) {
+      let comp = "Capacitor";
+      let value = "10uf";
+      let xf = drawCoords[0][0] * 6
+      let yf = drawCoords[0][1] * 6
+      let xl = drawCoords[1][0] * 6
+      let yl = drawCoords[1][1] * 6
+      let orientation = isVertical
+
+      const init = renderTool({comp, value, xf, yf, xl, yl, orientation});
 
     }
 
-  }, [activateTool])
+  }, [activateTool])  
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -461,11 +649,14 @@ export const Render = () => {
       // console.log("sum dx", sumDx)
 
       let sdx = sumDx + dx
+      let sdy = sumDy + dy
       console.log("sum dx", sumDx)
 
       if (sdx > 200 || sdx < -200) return
+      if (sdy > 200 || sdy < -200) return
 
       setSumDx(sdx)
+      setSumDy(sdy)
 
       setViewBox(prev => ({
         x: prev.x - dx,
@@ -513,15 +704,385 @@ export const Render = () => {
     setScopeList([...scopeList, filteredPVR[0]])
   }
 
+  // history
+
+  useEffect(() => {
+    const filtered = selection.filter(item => {
+      const itemHistory = history.filter(historyItem => historyItem.id === item.id);
+      
+      if (itemHistory.length === 0) return false;
+      
+      const liveOrDead = itemHistory[itemHistory.length - 1].action;
+      
+      return liveOrDead === "ADD";
+    });
+    
+    setFilteredSelection(filtered);
+  }, [selection, history]);
+
+  const reconcile = (actions) => {
+    let init = []
+
+    for (let i = 0; i < selection.length; i++) {
+      let id = selection[i].id
+    }
+    setFilteredSelection(init)
+    init = []
+  } // UNUSED
+
+  const save = async (file) => {
+
+    /**
+     * for updates selection list can be cleaned up after save. 
+     * things like delete action can be clened out too.
+     */
+
+    let branchIdx = 1
+    let saved = []
+
+    while (branchIdx !== null) {
+      const branch = history.filter(s => s.branch === branchIdx)
+
+      if (branch.length === 0) {
+        branchIdx = null
+        break;
+      }
+
+      const lastBranchItem = branch[branch.length - 1] 
+      saved.push(lastBranchItem)
+
+      branchIdx = branchIdx + 1
+    }
+
+    
+
+    localStorage.setItem(file, JSON.stringify(history)) // RECALL: saving the entire history for now
+    localStorage.setItem(`${file}+components`, JSON.stringify(selection))
+    localStorage.setItem(`${file}+prevHistoryId`, prevHistoryId)
+  }
+
+  const loadSaved = async (file) => {
+    try {
+      const history = localStorage.getItem(file);
+      const components = localStorage.getItem(`${file}+components`)
+      const pHId = localStorage.getItem(`${file}+prevHistoryId`)
+  
+      if (history) {
+        const parsedData = JSON.parse(history);
+        
+        setHistory([...parsedData]);
+        setSelection([...JSON.parse(components)])
+        setPrevHistoryId(parseFloat(pHId))
+      } else {
+        console.log("file doesn't exist")
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const getLocalStorageFiles = () => {
+    const fileList = [];
+    
+    // Loop through all localStorage items
+    for (let i = 0; i < localStorage.length; i++) {
+      // Get the key at index i
+      const filename = localStorage.key(i);
+      !filename.includes("+components") && !filename.includes("+prevHistoryId") && fileList.push(filename);
+    }
+    
+    return fileList;
+  };
+
+  const handleFileList = () => {
+    setFileListOpen(!fileListOpen)
+
+    setFileList(getLocalStorageFiles())
+  }
+
+  const handleHistorySelect = (id, source) => {
+
+    const dispatch = (filteredSelection, history, liveOrDead, index) => {
+
+      const deleteComp = () => {
+        
+        const updatedHistory = history.map((item, i) => {
+          if (i === index) {
+            return {
+              ...item,
+              action: "DELETE",
+              live: liveOrDead,
+            };
+          }
+          return item;
+        });
+
+        for (let s=0; s<filteredSelection.length; s++) {
+          if (filteredSelection[s].id === updatedHistory[index].id) {
+            // add set timeout here for half a second
+            if (updatedHistory[index].action === "DELETE") {
+              filteredSelection = filteredSelection.filter((_, idx) => idx !== s);
+            } 
+          }
+        }
+
+        return {
+          f: filteredSelection,
+          h: updatedHistory
+        }
+      };
+
+      const addComp = () => {
+
+        const updatedHistory = history.map((item, i) => {
+          if (i === index) {
+            return {
+              ...item,
+              action: "ADD",
+              live: liveOrDead,
+            };
+          }
+          return item;
+        });  
+
+        if (updatedHistory[index].action === "ADD") {
+          filteredSelection = [...filteredSelection, selection.find(s => s.id === updatedHistory[index].id)]
+        } 
+        
+        return {
+          f: filteredSelection,
+          h: updatedHistory
+        }
+      };
+  
+      // Fixed: Create function references instead of executing them immediately
+      const funcMap = {
+        "ADD": () => deleteComp(),
+        "DELETE": () => addComp(),
+      };
+      
+      // Fixed: Actually call the appropriate function based on the current action
+      const currentAction = history[index].action;
+      return funcMap[currentAction]();
+    }
+
+    let dest = prevHistoryId
+
+    if (source === "undo") {
+      console.log("undo", source)
+      if ((id + 1) === (history.length - 1)) {
+        console.log("debug", id, history.length - 1)
+        return
+      } 
+
+      dest = id + 1
+    }
+
+    if (source === "redo") {
+      dest = id - 1
+    }
+
+    if (id < dest || dest === null) {
+
+      let init = dest === null ? history.length - 1 : dest
+      let f = [...filteredSelection];
+      let h = [...history];
+      let liveOrDead = "dead"
+      
+      for (let i = init; i > id; i--) {
+        console.log("init i", i, id)
+        const result = dispatch(f, h, liveOrDead, i);
+        f = result.f;
+        h = result.h;
+      }
+      
+      setFilteredSelection(f);
+      setHistory(h);
+
+      // reconcile(history) UNUSED
+
+    } else if (id >= dest) {
+
+      let f = [...filteredSelection];
+      let h = [...history];
+      let liveOrDead = "live"
+
+      for (let i = dest + 1; i <= id; i++) {
+
+        const result = dispatch(f, h, liveOrDead, i);
+        f = result.f;
+        h = result.h;
+
+      }
+
+      setFilteredSelection(f);
+      setHistory(h);
+    }
+
+    setPrevHistoryId(id)
+  }
+  
+  const handleDelete = (itemId, id) => {
+
+    let branch = null
+
+    // get branch
+    for (let i = 0; i < history.length; i++) {
+      if (itemId === history[i].id) {
+        branch = history[i].branch
+      }
+    }
+
+    let historyObject = new HistoryClass( "DELETE", "comp", itemId, branch, "live")
+    setHistory([...history, historyObject.toHistoryEntry()])
+
+    setFilteredSelection(filteredSelection.filter((_, idx) => idx !== id));
+    setPrevHistoryId(null)
+  }
+
+  const handleFolderClick = () => {
+    setTempFolder(folder);
+    setEditingFolder(true);
+  };
+
+  const handleFileClick = () => {
+    setTempFile(file);
+    setEditingFile(true);
+  };
+
+  const saveFolderChange = () => {
+    setFolder(tempFolder);
+    setEditingFolder(false);
+  };
+
+  const saveFileChange = () => {
+    setFile(tempFile);
+    setEditingFile(false);
+  };
+
+  const handleKeyDown = (e, saveFunction) => {
+    if (e.key === "Enter") {
+      saveFunction();
+    } else if (e.key === "Escape") {
+      setEditingFolder(false);
+      setEditingFile(false);
+    }
+  };
+
+  const ViewBox = () => {
+    return (
+      <div className='absolute bottom-[140px] left-[28%] text-white' onClick={() => handlePipeline()}>
+        <button>Generate</button>
+      </div>
+    )
+  }
+
+  const Prompt = () => {
+    return (
+      <div className='absolute bottom-[140px] left-[28%] text-white' onClick={() => handlePipeline()}>
+        <button>Generate</button>
+      </div>
+    )
+  }
+
+  const SelectTab = (prop) => {
+
+    const ComponentMap = {
+      prompt: <Prompt />,
+      scope: <Sine pvr={scopeList}/>,
+      canvas: <Canvas setViewBox={setViewBox} isDragging={isDragging} setDrawCoords={setDrawCoords} setActivateTool={setActivateTool}/>,
+      viewBox: <ViewBox />
+    }
+
+    const Component = ComponentMap[prop.tab]
+
+    return Component
+  }
+
+  // pipeline
+
+  const funcMap = {
+    // prod
+    "saveFile": async () => {
+      await save(file)
+      alert(`saved ${file}`)
+    },
+
+    "saveFileByName": async ({input}) => {
+      await save(input)
+    },
+
+    "loadFile": async ({input}) => {
+      await loadSaved(input[0])
+    },
+
+    "RenderTool": async ({ctx, input, id}) => {
+
+      let comp = String(input[0]);
+      let value = String(input[1]);
+      let xf = parseFloat(input[2])
+      let yf = parseFloat(input[3])
+      let xl = parseFloat(input[4])
+      let yl = parseFloat(input[5])
+      let orientation = String(input[6])
+
+      await renderTool({comp, value, xf, yf, xl, yl, orientation}, ctx, id);
+
+    },
+  };
+
+  const pipeline = new Pipeline(funcMap);
+
+  // 'saveFile', 'loadFile $Operational Amplifier',
+
+  const handlePipeline = () => {
+
+    let head = [
+      {id: 23050, input: 'RenderTool $Capacitor $10uf $800 $200 $400 $300 $none'}, 
+      {id: 245509, input: 'RenderTool $Resistor $10ohms $400 $400 $600 $300 $none'}, 
+      {id: 4782002, input: 'RenderTool $Inductor $10H $200 $200 $800 $300 $none'},
+      {id: 493002, input: 'RenderTool $Capacitor $10uf $1400 $300 $600 $300 $none'}, 
+      {id: 789911, input: 'RenderTool $Resistor $10ohms $100 $400 $1000 $300 $none'}, 
+      {id: 111930, input: 'RenderTool $Inductor $10H $900 $300 $100 $300 $none'},
+    ]
+
+    let chain = [
+      {id: 2004490, input: 'saveFileByName $promptV1'},
+      {id: 333902, input: 'saveFileByName $magnetic flux'},
+      {id: 125392, input: 'saveFileByName $Complex Sim'},
+    ]
+
+    pipeline.compose(head)
+    pipeline.compose(chain)
+
+    pipeline.run()
+
+  }
+
   return (
     <div className="w-full h-screen relative cursor-default">
 
       <div className='absolute top-[150px] w-screen'>
-        <Canvas setViewBox={setViewBox} isDragging={isDragging} setDrawCoords={setDrawCoords} setActivateTool={setActivateTool}/>
+        {/* <Canvas setViewBox={setViewBox} isDragging={isDragging} setDrawCoords={setDrawCoords} setActivateTool={setActivateTool}/> */}
       </div>
 
       <div className='absolute bottom-[40px] w-fit left-[28%]'>
         {/* <Sine pvr={scopeList}/> */}
+      </div>
+
+      {
+        activeTab && (
+          <div className={activeTab==="canvas"? "absolute top-[150px] w-screen": "absolute bottom-[40px] w-fit left-[28%]" }>
+            <SelectTab tab={activeTab}/>
+          </div>
+        )
+      }
+
+      <div className='absolute top-[140px] w-fit right-[8%] text-[44px] text-white'>
+        <div onClick={() => setActiveTab("canvas")}>Canvas</div>
+        <div onClick={() => setActiveTab("viewBox")}>ViewBox</div>
+        <div onClick={() => setActiveTab("scope")}>Scope</div>
+        <div onClick={() => setActiveTab("prompt")}>Prompt</div>
       </div>
 
       {/* transform -translate-x-1/2 */}
@@ -530,9 +1091,65 @@ export const Render = () => {
 
         <div className='workspace flex justify-between w-[90%] px-[14px] pt-[11px] pb-[14px]'>
 
-          <div className=' flex items-end '>
+          <div className='flex items-end '>
             <p className='text-[#7a7a7a] text-[24px]'>Workspace</p>
-            <p className='ml-[8px] pb-[4px] mr-[2px] text-[#9cff19]'>RLC/</p> <p className='pb-[4px] text-[#ff12b4]'>Operational Amplifier</p>
+            <div className="flex text-white">
+              <div className="flex items-center">
+                {editingFolder ? (
+                  <div className="flex items-center">
+                    <input
+                      type="text"
+                      value={tempFolder}
+                      onChange={(e) => setTempFolder(e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, saveFolderChange)}
+                      autoFocus
+                      className="ml-2 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-[#9cff19] outline-none"
+                    />
+                    <button
+                      onClick={saveFolderChange}
+                      className="ml-2 px-2 py-1 bg-blue-600 rounded hover:bg-blue-700 text-xs"
+                    >
+                      Done
+                    </button>
+                  </div>
+                ) : (
+                  <p 
+                    className="ml-2 pb-1 mr-1 text-[#9cff19] cursor-pointer"
+                    onClick={handleFolderClick}
+                  >
+                    {folder}/
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center">
+                {editingFile ? (
+                  <div className="flex items-center">
+                    <input
+                      type="text"
+                      value={tempFile}
+                      onChange={(e) => setTempFile(e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, saveFileChange)}
+                      autoFocus
+                      className="ml-2 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-[#ff12b4] outline-none"
+                    />
+                    <button
+                      onClick={saveFileChange}
+                      className="ml-2 px-2 py-1 bg-blue-600 rounded hover:bg-blue-700 text-xs"
+                    >
+                      Done
+                    </button>
+                  </div>
+                ) : (
+                  <p 
+                    className="pb-1 text-[#ff12b4] cursor-pointer"
+                    onClick={handleFileClick}
+                  >
+                    {file}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className='text-[#D331CF] font-[700] flex items-end'>
@@ -545,10 +1162,27 @@ export const Render = () => {
            text-white border rounded-[44px] py-[4px] px-[16px] bg-white/4 
             backdrop-blur-md border-white/10 shadow-lg items-center'>
 
-          <div className='space-x-[44px] flex items-center w-[24%] pl-[18px]'>
+          <div className='relative space-x-[44px] flex items-center w-[24%] pl-[18px]'>
             <p className='text-[18px]'>Home</p>
-            <p className='text-[18px]'>Options</p>
-            <p className='text-[18px]'>Save</p>
+            {/* <p className='text-[18px]'>Options</p> */}
+            <p className='text-[18px]' onClick={() => save(file)}>Save</p>
+            <p className='text-[18px]' onClick={() => handleFileList()}>Load</p>
+
+            {
+            fileListOpen && fileList && (
+              <div className="absolute left-[96px] top-[49px] w-48 bg-white border border-gray-300 shadow-lg rounded-lg p-2 text-black">
+                {fileList.map((filename, index) => (
+                  <div 
+                    key={index} 
+                    onClick={() => loadSaved(filename)}
+                    className="file-item hover:text-white hover:bg-black"
+                  >
+                    {filename}
+                  </div>
+                ))}
+              </div>
+            )
+          }
           </div>
 
           <div className="relative">
@@ -622,20 +1256,21 @@ export const Render = () => {
               )
             }
             </div>
-
             <div className='flex space-x-[24px] pl-[24px]'>
-              {recentlyUsedTools.map((tool, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleToolClick(tool.type)}
-                  className="flex flex-col items-center group cursor-pointer"
-                >
-                  <div>{tool.icon}</div>
-                  <p className="hidden group-hover:block absolute -bottom-4 whitespace-nowrap bg-white/70 backdrop-blur-lg text-black px-2 py-1 rounded-md text-sm">
-                    {tool.type}
-                  </p>
-                </div>
-              ))}
+              {Object.values(recentlyUsedTools)
+                .sort((a, b) => b.number - a.number) // Sort by number in descending order
+                .map((tool, index) => (
+                  <div
+                    key={index}
+                    onClick={() => handleToolClick(tool.type)}
+                    className="flex flex-col items-center group cursor-pointer"
+                  >
+                    <div>{tool.icon}</div>
+                    <p className="hidden group-hover:block absolute -bottom-4 whitespace-nowrap bg-white/70 backdrop-blur-lg text-black px-2 py-1 rounded-md text-sm">
+                      {tool.type} -- {tool.number}
+                    </p>
+                  </div>
+                ))}
             </div>
           </div>
 
@@ -645,6 +1280,15 @@ export const Render = () => {
             </div>
             <div>
               <CapacitorIcon />
+            </div>
+          </div>
+
+          <div className='flex space-x-[8px] mx-[14px]'>
+            <div onClick={()=>handleHistorySelect(prevHistoryId, "undo")}>
+              Undo
+            </div>
+            <div onClick={()=>handleHistorySelect(prevHistoryId, "undo")}>
+              Redo
             </div>
           </div>
 
@@ -725,9 +1369,9 @@ export const Render = () => {
             isExisting ? (
               <div className='w-full relative space-y-[16px] pt-[24px] px-[14px]'>
                 {
-                  selection && selection.map((item, index) => 
+                  tabActive === "comp" && filteredSelection ? filteredSelection.map((item, index) => 
                     open === item.id ? (
-                      <div key={index} className={`h-[160px] bg-white/10 backdrop-blur-lg border border-white/10 hover:border-white/30 rounded-lg shadow-lg text-[#c1c1c1] px-[14px] pt-[4px] ${ thisSelected === item.id ? ("text-[#ffe121]") : ("text-[#e9e9e9]")}`}>
+                      <div key={index} className={`h-[190px] bg-white/10 backdrop-blur-lg border border-white/10 hover:border-white/30 rounded-lg shadow-lg text-[#c1c1c1] px-[14px] pt-[4px] ${ thisSelected === item.id ? ("text-[#ffe121]") : ("text-[#e9e9e9]")}`}>
                         {/* {item.id} {item.value} {item.component} x-{item.coords.xA} y-{item.coords.yA} x2-{item.coords.xB} y2-{item.coords.yB} */}
 
                         <div className='w-full flex justify-end' >
@@ -748,7 +1392,8 @@ export const Render = () => {
                         </div>
 
                         <div className='mt-[8px]' onClick={()=>handleAddScope(item.id)}>Scope</div>
-  
+                        <div className='mt-[8px]' onClick={()=>handleDelete(item.id, index)}>Delete</div>
+
                         <div className='flex h-[40px] items-end'>
                           <p className='pr-[8px]' onClick={()=>handleComponentClick(item.id)}>{item.component}</p>
                           <p className='grow'>{item.id}</p>
@@ -765,7 +1410,11 @@ export const Render = () => {
                         </div>
                       </div>
                     )
-                  )
+                  ) : tabActive === "history" && history && history.map((item, index) => (
+                    <div key={index} className={`text-white hover:bg-[#767676] hover:text-black ${prevHistoryId === index && ("bg-[#fa7070]")}`} onClick={()=>handleHistorySelect(index, "none")}>
+                      action {item.action} --- comp {item.comp} --- branch {item.branch} --- id {item.id} --- {item.live}
+                    </div>
+                  ))
                 }
               </div>
             ) : (
@@ -783,7 +1432,7 @@ export const Render = () => {
         xmlns="http://www.w3.org/2000/svg" 
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
         preserveAspectRatio="xMidYMid slice"
-        className="w-full h-full bg-black"
+        className="w-full h-full bg-black" // h-full
         onClick={handleCanvasClick}
       >
 
@@ -799,7 +1448,6 @@ export const Render = () => {
             <circle cx="2.5" cy="2.5" r="0.2" fill="gray" />
           </pattern>
         </defs>
-
         
         <rect 
           x={viewBox.x} 
@@ -810,8 +1458,19 @@ export const Render = () => {
         />
 
         {
-          {selection} &&
-          selection.map((item, key) => (
+          canvasClick && (
+            <circle
+              cx={canvasClick.x}
+              cy={canvasClick.y}
+              r={1.6}
+              fill="#a7ff0f"
+            />
+          )
+        }
+
+        {
+          {filteredSelection} &&
+          filteredSelection.map((item, key) => (
             <ElectricalComponent
               key={key}
               id={item.id}

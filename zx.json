@@ -1,0 +1,431 @@
+[
+    {
+      "id": "circuit_001",
+      "metadata": {
+        "created_at": "2024-02-15T08:23:45Z",
+        "modified_at": "2024-02-16T14:12:32Z",
+        "user": {
+          "id": "u78923",
+          "experience_level": "advanced",
+          "preferences": {
+            "theme": "dark",
+            "units": "metric",
+            "auto_save": true
+          }
+        },
+        "tags": ["power", "analog", "educational"]
+      },
+      "circuit_properties": {
+        "name": "Simple Voltage Divider",
+        "description": "Basic voltage divider circuit with adjustable resistors",
+        "components": [
+          {
+            "id": "R1",
+            "type": "resistor",
+            "value": "1kohm",
+            "tolerance": "5%",
+            "position": {"x": 120, "y": 85},
+            "connections": ["VCC", "OUT"]
+          },
+          {
+            "id": "R2",
+            "type": "resistor",
+            "value": "2kohm",
+            "tolerance": "5%",
+            "position": {"x": 120, "y": 150},
+            "connections": ["OUT", "GND"]
+          },
+          {
+            "id": "VCC",
+            "type": "voltage_source",
+            "value": "5V",
+            "position": {"x": 50, "y": 85},
+            "connections": ["R1"]
+          },
+          {
+            "id": "GND",
+            "type": "ground",
+            "position": {"x": 50, "y": 150},
+            "connections": ["R2"]
+          }
+        ],
+        "measurements": [
+          {
+            "node": "OUT",
+            "type": "voltage",
+            "expected_value": "1.67V",
+            "actual_value": "1.65V",
+            "timestamp": "2024-02-15T09:12:00Z"
+          },
+          {
+            "path": ["VCC", "R1", "OUT"],
+            "type": "current",
+            "expected_value": "3.33mA",
+            "actual_value": "3.30mA",
+            "timestamp": "2024-02-15T09:12:00Z"
+          }
+        ]
+      },
+      "user_actions": [
+        {
+          "timestamp": "2024-02-15T08:25:12Z",
+          "action": "changevalue",
+          "parameters": {"component": "R1", "value": "1kohm"},
+          "natural_language": "Change R1 to 1 kilohm"
+        },
+        {
+          "timestamp": "2024-02-15T08:26:30Z",
+          "action": "changevalue",
+          "parameters": {"component": "R2", "value": "2kohm"},
+          "natural_language": "Set resistor R2 to 2k"
+        },
+        {
+          "timestamp": "2024-02-15T08:28:15Z",
+          "action": "rendertool",
+          "parameters": {"mode": "2D"},
+          "natural_language": "Show me the circuit in 2D view"
+        },
+        {
+          "timestamp": "2024-02-15T08:32:45Z",
+          "action": "savefile",
+          "parameters": {},
+          "natural_language": "Save the current circuit"
+        }
+      ],
+      "simulation_results": {
+        "status": "success",
+        "runtime": 1.23,
+        "data_points": [
+          {"time": 0, "OUT": 0},
+          {"time": 0.001, "OUT": 1.05},
+          {"time": 0.002, "OUT": 1.45},
+          {"time": 0.003, "OUT": 1.62},
+          {"time": 0.004, "OUT": 1.65},
+          {"time": 0.005, "OUT": 1.65}
+        ],
+        "summary": {
+          "converged": true,
+          "iterations": 42,
+          "error_margin": "0.001%"
+        }
+      }
+    },
+    {
+      "id": "circuit_002",
+      "metadata": {
+        "created_at": "2024-02-18T10:45:12Z",
+        "modified_at": "2024-02-19T16:33:21Z",
+        "user": {
+          "id": "u12456",
+          "experience_level": "intermediate",
+          "preferences": {
+            "theme": "light",
+            "units": "imperial",
+            "auto_save": false
+          }
+        },
+        "tags": ["filter", "capacitive", "high-pass"]
+      },
+      "circuit_properties": {
+        "name": "High-pass RC Filter",
+        "description": "First-order high-pass filter with adjustable cutoff",
+        "components": [
+          {
+            "id": "C1",
+            "type": "capacitor",
+            "value": "10uF",
+            "tolerance": "10%",
+            "position": {"x": 85, "y": 120},
+            "connections": ["IN", "OUT"]
+          },
+          {
+            "id": "R1",
+            "type": "resistor",
+            "value": "4.7kohm",
+            "tolerance": "5%",
+            "position": {"x": 150, "y": 120},
+            "connections": ["OUT", "GND"]
+          },
+          {
+            "id": "IN",
+            "type": "voltage_source",
+            "value": "1Vp-p",
+            "frequency": "1kHz",
+            "waveform": "sine",
+            "position": {"x": 50, "y": 120},
+            "connections": ["C1"]
+          },
+          {
+            "id": "GND",
+            "type": "ground",
+            "position": {"x": 150, "y": 180},
+            "connections": ["R1"]
+          }
+        ],
+        "measurements": [
+          {
+            "node": "OUT",
+            "type": "voltage",
+            "expected_value": "0.707Vp-p",
+            "actual_value": "0.702Vp-p",
+            "timestamp": "2024-02-18T11:05:23Z",
+            "phase_shift": "45deg"
+          }
+        ]
+      },
+      "user_actions": [
+        {
+          "timestamp": "2024-02-18T10:46:22Z",
+          "action": "changevalue",
+          "parameters": {"component": "C1", "value": "10uF"},
+          "natural_language": "Set capacitor C1 to 10 microfarads"
+        },
+        {
+          "timestamp": "2024-02-18T10:47:15Z",
+          "action": "changevalue",
+          "parameters": {"component": "R1", "value": "4.7kohm"},
+          "natural_language": "Change the resistor to 4.7k ohms"
+        },
+        {
+          "timestamp": "2024-02-18T10:50:33Z",
+          "action": "rendertool",
+          "parameters": {"mode": "3D"},
+          "natural_language": "Render the circuit in 3D mode"
+        },
+        {
+          "timestamp": "2024-02-18T10:55:12Z",
+          "action": "savefile",
+          "parameters": {},
+          "natural_language": "Save my work"
+        }
+      ],
+      "simulation_results": {
+        "status": "success",
+        "runtime": 2.45,
+        "frequency_response": [
+          {"frequency": 10, "gain": -20.04, "phase": -87.1},
+          {"frequency": 100, "gain": -6.02, "phase": -59.5},
+          {"frequency": 339, "gain": -3.01, "phase": -45.0},
+          {"frequency": 1000, "gain": -0.58, "phase": -18.4},
+          {"frequency": 10000, "gain": -0.05, "phase": -2.1}
+        ],
+        "summary": {
+          "cutoff_frequency": "338.6Hz",
+          "passband_ripple": "0.1dB",
+          "phase_linearity": "good"
+        }
+      }
+    },
+    {
+      "id": "circuit_003",
+      "metadata": {
+        "created_at": "2024-03-05T14:22:56Z",
+        "modified_at": "2024-03-07T09:18:44Z",
+        "user": {
+          "id": "u56789",
+          "experience_level": "beginner",
+          "preferences": {
+            "theme": "system",
+            "units": "metric",
+            "auto_save": true
+          }
+        },
+        "tags": ["amplifier", "transistor", "bjt"]
+      },
+      "circuit_properties": {
+        "name": "Common Emitter Amplifier",
+        "description": "Simple BJT amplifier circuit with biasing network",
+        "components": [
+          {
+            "id": "Q1",
+            "type": "transistor",
+            "model": "2N3904",
+            "position": {"x": 150, "y": 120},
+            "connections": ["C", "B", "E"],
+            "parameters": {
+              "beta": 100,
+              "Vbe": "0.7V"
+            }
+          },
+          {
+            "id": "R1",
+            "type": "resistor",
+            "value": "10kohm",
+            "tolerance": "5%",
+            "position": {"x": 100, "y": 80},
+            "connections": ["VCC", "B"]
+          },
+          {
+            "id": "R2",
+            "type": "resistor",
+            "value": "2.2kohm",
+            "tolerance": "5%",
+            "position": {"x": 100, "y": 150},
+            "connections": ["B", "GND"]
+          },
+          {
+            "id": "RC",
+            "type": "resistor",
+            "value": "4.7kohm",
+            "tolerance": "5%",
+            "position": {"x": 150, "y": 80},
+            "connections": ["VCC", "C"]
+          },
+          {
+            "id": "RE",
+            "type": "resistor",
+            "value": "1kohm",
+            "tolerance": "5%",
+            "position": {"x": 150, "y": 160},
+            "connections": ["E", "GND"]
+          },
+          {
+            "id": "CIN",
+            "type": "capacitor",
+            "value": "1uF",
+            "position": {"x": 80, "y": 120},
+            "connections": ["IN", "B"]
+          },
+          {
+            "id": "COUT",
+            "type": "capacitor",
+            "value": "10uF",
+            "position": {"x": 180, "y": 120},
+            "connections": ["C", "OUT"]
+          },
+          {
+            "id": "VCC",
+            "type": "voltage_source",
+            "value": "12V",
+            "position": {"x": 120, "y": 50},
+            "connections": ["R1", "RC"]
+          },
+          {
+            "id": "IN",
+            "type": "voltage_source",
+            "value": "10mVp-p",
+            "frequency": "1kHz",
+            "waveform": "sine",
+            "position": {"x": 50, "y": 120},
+            "connections": ["CIN"]
+          },
+          {
+            "id": "GND",
+            "type": "ground",
+            "position": {"x": 120, "y": 200},
+            "connections": ["R2", "RE"]
+          },
+          {
+            "id": "OUT",
+            "type": "output",
+            "position": {"x": 210, "y": 120},
+            "connections": ["COUT"]
+          }
+        ],
+        "measurements": [
+          {
+            "node": "B",
+            "type": "voltage",
+            "dc_value": "1.82V"
+          },
+          {
+            "node": "C",
+            "type": "voltage",
+            "dc_value": "6.35V"
+          },
+          {
+            "node": "E",
+            "type": "voltage",
+            "dc_value": "1.12V"
+          },
+          {
+            "node": "OUT",
+            "type": "voltage",
+            "ac_value": "0.96Vp-p",
+            "phase": "180deg"
+          }
+        ]
+      },
+      "user_actions": [
+        {
+          "timestamp": "2024-03-05T14:25:12Z",
+          "action": "changevalue",
+          "parameters": {"component": "RC", "value": "4.7kohm"},
+          "natural_language": "Set collector resistor to 4.7k"
+        },
+        {
+          "timestamp": "2024-03-05T14:26:45Z",
+          "action": "changevalue",
+          "parameters": {"component": "RE", "value": "1kohm"},
+          "natural_language": "Change emitter resistor to 1k ohm"
+        },
+        {
+          "timestamp": "2024-03-05T14:28:22Z",
+          "action": "rendertool",
+          "parameters": {"mode": "schematic"},
+          "natural_language": "Show schematic view"
+        },
+        {
+          "timestamp": "2024-03-06T09:12:34Z",
+          "action": "changevalue",
+          "parameters": {"component": "R1", "value": "12kohm"},
+          "natural_language": "Increase R1 to 12k"
+        },
+        {
+          "timestamp": "2024-03-06T09:15:18Z",
+          "action": "rendertool",
+          "parameters": {"mode": "2D"},
+          "natural_language": "Let me see the 2D view"
+        },
+        {
+          "timestamp": "2024-03-06T09:20:45Z",
+          "action": "savefile",
+          "parameters": {},
+          "natural_language": "Save the circuit"
+        }
+      ],
+      "simulation_results": {
+        "status": "success",
+        "runtime": 3.78,
+        "dc_operating_point": {
+          "Q1_IC": "1.23mA",
+          "Q1_VCE": "5.23V",
+          "Q1_VBE": "0.7V",
+          "Q1_beta_actual": 97.5
+        },
+        "ac_response": {
+          "gain": -96.4,
+          "input_impedance": "1.95kohm",
+          "output_impedance": "4.52kohm",
+          "bandwidth": "45kHz",
+          "lower_cutoff": "15Hz",
+          "upper_cutoff": "45kHz"
+        },
+        "thermal": {
+          "Q1_power": "6.43mW",
+          "estimated_temperature": "26.8C"
+        }
+      },
+      "teaching_notes": {
+        "concepts": ["Biasing", "Amplification", "Common emitter", "Coupling capacitors"],
+        "exercises": [
+          {
+            "id": "ex1",
+            "description": "Calculate the voltage gain",
+            "difficulty": "medium",
+            "solution": "Av = RC/re ≈ 96"
+          },
+          {
+            "id": "ex2",
+            "description": "Determine the effect of changing RE",
+            "difficulty": "hard",
+            "observations": [
+              "Increases stability",
+              "Reduces gain",
+              "Improves linearity"
+            ]
+          }
+        ]
+      }
+    }
+  ]

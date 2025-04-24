@@ -1,0 +1,22 @@
+[
+    {
+      "instruction": "Change the resistor to 4 ohms",
+      "output": "changevalue $4ohms"
+    },
+    {
+      "instruction": "Save the current circuit",
+      "output": "savefile"
+    },
+    {
+      "instruction": "Render the circuit in 3D and then save",
+      "output": "rendertool $3D, savefile"
+    },
+    {
+      "instruction": "Set capacitor C1 to 10μF, change resistor R2 to 1k, and save the file",
+      "output": "changevalue $C1 10μF, changevalue $R2 1k, savefile"
+    },
+    {
+      "instruction": "Print the circuit diagram",
+      "output": "unavailable"
+    }
+]
