@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { CapacitorIcon } from '../assets/svgIcon';
+import CanvasSLider, { OscilloscopeKnob, StepSlider } from './slider';
 
 export default function Sine({pvr}) { // RECALL: use this instead pvr2
   const [isActive, setIsActive] = useState(true);
   const [current, setCurrent] = useState(null);
   const [pvr2, setPVR] = useState(null)
+  const [all, setAll] = useState(true)
 
   useEffect(() => {
     // Assuming your array is stored in a variable called 'data'
@@ -14,46 +16,63 @@ export default function Sine({pvr}) { // RECALL: use this instead pvr2
         imax: -0.04785513731757324,
         impedance: "4ohms",
         type: "Resistor",
-        vmax: -0.142054927029295
+        vmax: 120
       },
       {
         comp: 2,
         imax: -0.04785513731757324,
         impedance: "-j0.0019904458598726115uf",
         type: "Capacitor",
-        vmax: -0.00009525305994739896
+        vmax: 100
       },
-      {
-        comp: 3,
-        imax: -0.04785513731757324,
-        impedance: "-5VDC",
-        type: "DCVoltageSource",
-        vmax: NaN
-      },
+      // {
+      //   comp: 3,
+      //   imax: -0.04785513731757324,
+      //   impedance: "-5VDC",
+      //   type: "DCVoltageSource",
+      //   vmax: NaN
+      // },
       {
         comp: 4,
         imax: -0.04785513731757324,
         impedance: "j100.48H",
         type: "Inductor",
-        vmax: -4.808484197669759
+        vmax: 70
       }
     ];
 
     setPVR(data)
 }, [])
 
+const handleClick = (item) => {
+  setCurrent(item)
+  setAll(false)
+}
+
+const handleAll = () => {
+  setAll(true)
+  setCurrent(null)
+}
+
+useEffect(() => {
+  if (all) {
+    // setCurrent(null)
+  }
+}, [all])
+
   return (
     <div className="flex flex-col items-center gap-2">
       <div className='flex'>
         <button
           onClick={() => setIsActive((prev) => !prev)}
-          className="px-4 py-2 bg-[#b0ff06] text-[#05250e] font-semibold rounded-[24px] mr-2 shadow"
+          className="px-4 py-2 bg-[#b0ff06] font-semibold text-[#05250e] rounded-[24px] mr-2 shadow"
         >
           {isActive ? "Stop Oscilloscope" : "Start Oscilloscope"}
         </button>
         <div className='flex text-white space-x-1'>
+          <div onClick={() => handleAll()} className={`rounded-[12px] text-black border border-[#d5d5d5] px-[14px] flex items-center ${all ? "bg-white/80" : "bg-white/50"} backdrop-blur-[12px]`}>All</div>
           {pvr2 && pvr2.map((item, index) => (
-            <div key={index} onClick={()=>setCurrent(item)} className='rounded-[12px] text-black border border-[#d5d5d5] px-[14px] flex items-center bg-white/50 backdrop-blur-[12px]'>
+            <div key={index} onClick={() => handleClick(item)} className={`rounded-[12px] text-black border border-[#d5d5d5] px-[14px] flex items-center ${current === item ? "bg-white/80" : "bg-white/50"} backdrop-blur-[12px]`}>
               <div className='mr-[8px]'>
                 {item.comp}
               </div>
@@ -67,221 +86,73 @@ export default function Sine({pvr}) { // RECALL: use this instead pvr2
           ))}
         </div>
       </div>
-      {isActive && <SineWave current={current}/>}
+      <div className=''>
+        {isActive && <SineWave current={current} all={all} scopeList={pvr2}/>}
+      </div>
     </div>
   );
 }
 
-// const SineWave = () => {
-//   const canvasRef = useRef(null);
-
-//   useEffect(() => {
-//     const canvas = canvasRef.current;
-//     const ctx = canvas.getContext('2d');
-    
-//     // Wave properties
-//     const amplitude = 60;
-//     const frequency = 0.04;
-//     let phase = 0;
-//     let animationFrameId;
-    
-//     const drawWave = () => {
-//       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-//       ctx.beginPath();
-//       ctx.strokeStyle = '#20F2CA';
-//       ctx.lineWidth = 2;
-      
-//       for (let x = 0; x < canvas.width; x++) {
-//         const y = amplitude * Math.sin(frequency * x + phase) + canvas.height / 2;
-//         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-//       }
-      
-//       ctx.stroke();
-//       phase += 0.05;
-//       animationFrameId = requestAnimationFrame(drawWave);
-//     };
-
-//     drawWave();
-
-//     return () => cancelAnimationFrame(animationFrameId);
-//   }, []);
-
-//   return (
-//     <div className="flex justify-center">
-//       <div className="flex w-fit justify-center items-center bg-white/10 backdrop-blur-lg border border-white/30 rounded-lg shadow-lg overflow-hidden">
-//         <div className="absolute inset-0 bg-gradient-to-br from-slate-300/20 via-slate-100/10 to-gray-500/30 mix-blend-overlay"></div>
-//         <canvas ref={canvasRef} width={900} height={200} />
-//       </div>
-//     </div>
-//   );
-// };
-
-
-function SineWave({current}) {
+function SineWave({current, all, scopeList}) {
   const canvasRef = useRef(null);
   const [state, setState] = useState(null);
-  // const [isAmplitude, setIsAmplitude] = useState(false);
+  const [sliderVal, setSliderVal] = useState(100)
+  const [stepSliderVal, setStepSliderVal] = useState(8)
+  const [liveOrDead, setLiveOrDead] = useState("live")
+  const [vmax, setVmax] = useState(() => current?.vmax || null);
+  const [vmaxInit, setVmaxInit] = useState(() => current?.vmax || null);
+  const [allVmaxInit, setAllVmaxInit] = useState(null)
+  const [allVmax, setAllVmax] = useState(null)
+  const [origin, setOrigin] = useState(50)
   const animationRef = useRef(null);
   const stateRef = useRef(null)
 
   let isAmplitude = false
   let phaseOffset = 0
   let x = 0;
-  let y = current?.vmax || null; // RECALL: fix this using scaling function
+  let y = 0 || null; // RECALL: fix this using scaling function
   let yb = y
-
-  // useEffect(() => {
-  //   const canvas = canvasRef.current;
-  //   const ctx = canvas.getContext('2d');
-    
-  //   const charge = (x) => {
-  //     let coef = 60; // RECALL: use vmax where theres 60
-  //     let rc = 14 * 30;
-  //     let exp = (-1 * x ) / rc;
-      
-  //     let chargeVal = coef * (1 - Math.exp(exp));
-  //     // console.log("cv", chargeVal)
-  //     return canvas.height / 2 - chargeVal
-  //   };
-    
-  //   const discharge = (x, initialY) => {
-  //     let coef = initialY - canvas.height / 2;
-  //     let rc = 10 * 30;
-  //     let exp = (-1 * x) / rc;
-      
-  //     let dischargeVal = coef * Math.exp(exp);
-  //     return canvas.height / 2 - dischargeVal;
-  //   };
-
-  //   const animate = () => {
-      
-  //     // Draw reference line at center
-  //     ctx.beginPath();
-  //     ctx.strokeStyle = "#555555";
-  //     ctx.moveTo(0, canvas.height / 2);
-  //     ctx.lineTo(canvas.width, canvas.height / 2);
-  //     ctx.stroke();
-
-  //     ctx.beginPath();
-  //     ctx.strokeStyle = "#555555";
-  //     ctx.moveTo(0, 60);
-  //     ctx.lineTo(canvas.width, 60);
-  //     ctx.stroke();
-      
-  //     // Draw waveform
-  //     ctx.fillStyle = "#a7ff0f";
-  //     ctx.lineWidth = 2;
-  //     ctx.fillRect(x, y, 2, 2)
-
-  //     ctx.fillStyle = "#a7ff0f";
-  //     ctx.lineWidth = 2;
-  //     ctx.fillRect(x, yb, 2, 2)
-      
-  //     x = x + 2.5;
-
-  //     if (state === 'start') {
-  //       if (isAmplitude) {
-
-  //         if (!wasAmplitude) {
-  //           const currentPhase = Math.asin((y - canvas.height / 2) / 60) / 0.04;
-  //           phaseOffset = x - currentPhase;
-  //           wasAmplitude = true;
-  //         }
-          
-  //         y = canvas.height / 2 - 60 * Math.sin(0.04 * x - phaseOffset);
-
-  //         yb = canvas.height / 2 - 60 * Math.sin(0.04 * x - phaseOffset + 90);
-
-  //       } else {
-  //         y = charge(x); // Offset by initial x
-          
-  //         // let diff = 60 - Math.abs(y - canvas.height / 2);
-  //         let diff = Math.abs(60 - y)
-  //         diff *= diff
-  //         if (diff < 0.5) {
-  //           isAmplitude = true
-  //         }
-  //       }
-  //     } else if (state === 'end') {
-
-  //       // Get the initial y value when discharge starts
-  //       const initialY = y;
-        
-  //       // Change to discharge function
-  //       y = discharge(x, initialY); // Reset x counter for discharge
-        
-  //       // Stop animation when discharge is complete
-  //       if (Math.abs(y - canvas.height / 2) < 0.5) {
-  //         cancelAnimationFrame(animationRef.current);
-  //         return;
-  //       }
-  //     }
-      
-  //     stateRef.current = [x, y]
-  //     animationRef.current = requestAnimationFrame(animate);
-  //   };
-
-  //   const animateDischarge = () => { // pipe previous value states to proceed.
-  //     // Draw reference line at center
-  //     ctx.beginPath();
-  //     ctx.strokeStyle = "#555555";
-  //     ctx.moveTo(0, canvas.height / 2);
-  //     ctx.lineTo(canvas.width, canvas.height / 2);
-  //     ctx.stroke();
-
-  //     ctx.beginPath();
-  //     ctx.strokeStyle = "#555555";
-  //     ctx.moveTo(0, 60);
-  //     ctx.lineTo(canvas.width, 60);
-  //     ctx.stroke();
-
-  //     // Draw waveform
-  //     ctx.strokeStyle = "#00AAFF";
-  //     ctx.lineWidth = 2;
-  //     ctx.fillRect(x, y, 2, 2)
-
-  //     x = x + 0.5;
-
-  //     // Get the initial y value when discharge starts
-  //     const initialY = y;
-      
-  //     // Change to discharge function
-  //     y = discharge(x, initialY); // Reset x counter for discharge
-
-  //     animationRef.current = requestAnimationFrame(animateDischarge);
-  //   }
-
-  //   if (state === 'start') {
-  //     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  //     // Clear any existing animation frame before starting a new one
-  //     if (animationRef.current) {
-  //       cancelAnimationFrame(animationRef.current);
-  //     }
-  //     // Start the animation
-  //     animationRef.current = requestAnimationFrame(animate);
-  //   }
-
-  //   if (state === 'end') {
-  //     x = stateRef.current[0]
-  //     y = stateRef.current[1]
-  //     console.log("end")
-  //     // Start the animation
-  //     animationRef.current = requestAnimationFrame(animateDischarge);
-  //   }
-    
-  //   // Cleanup function to cancel animation when component unmounts
-  //   return () => {
-  //     if (animationRef.current) {
-  //       cancelAnimationFrame(animationRef.current);
-  //     }
-  //   };
-  // }, [state]);
 
   const handleClick = (state) => {
     setState(state)
     // stateRef.current = state
+  }
+
+  const charge = (x, currentPhase, canvas, vMax, origin) => {
+    let coef = vMax; // RECALL: use vmax where theres 60
+    let rc = 17;
+    let exp = (-1 * (x + currentPhase) ) / rc;
+    
+    let yOrigin =  origin - 50
+    yOrigin *= 2
+
+    let chargeVal = coef * (1 - Math.exp(exp));
+    return canvas.height / 2 - (yOrigin) - chargeVal
+  };
+
+  const drawGrid = (ctx, canvas) => {
+    for (let i = 0; i < 6; i++) {
+      const x = i * 120;
+      
+      ctx.beginPath();
+      ctx.strokeStyle = '#444441';
+      ctx.lineWidth = 1;
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    
+    // Draw horizontal lines
+    for (let i = 0; i < 4; i++) {
+      const y = i * 70;
+      
+      ctx.beginPath();
+      ctx.strokeStyle = '#444441';
+      ctx.lineWidth = 1;
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
   }
 
   useEffect(() => {
@@ -289,51 +160,30 @@ function SineWave({current}) {
     const ctx = canvas.getContext('2d');
     
     let wasAmplitude = false
-    let endX = 480;
-    let currentPhase = -10;
+    let endX = 680;
+    let currentPhase = -680;
     let endXPhase = 0;
     let endXSine = endX;
     let sinePhase = null;
-    let chargePhase = 0.3;
     let phaseShift = 0.1;
-    
-    const charge = (x, currentPhase) => {
-      let coef = 60; // RECALL: use vmax where theres 60
-      let rc = 14 * 30;
-      let exp = (-1 * (x + currentPhase) ) / rc;
-      
-      let chargeVal = coef * (1 - Math.exp(exp));
-      // console.log("cv", chargeVal)
-      return canvas.height / 2 - chargeVal
-    };
+
+    drawGrid(ctx, canvas)
     
     const animate = () => {
       // Clear the entire canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Draw reference lines
-      ctx.beginPath();
-      ctx.strokeStyle = "#555555";
-      ctx.moveTo(0, canvas.height / 2);
-      ctx.lineTo(canvas.width, canvas.height / 2);
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.strokeStyle = "#555555";
-      ctx.moveTo(240, 0);
-      ctx.lineTo(240, canvas.height);
-      ctx.stroke();
-      
-      // Draw the sine wave
+      drawGrid(ctx, canvas)
+      let yOrigin = (canvas.height * origin) / 100
+
       ctx.beginPath();
       ctx.strokeStyle = "#a7ff0f";
       ctx.lineWidth = 2;
 
-      for (let x = 0; x <= endX; x += 4) {
-
-        y = charge(x, currentPhase)
-
-        if (y < canvas.height / 2) {
+      for (let x = 0; x <= endX; x += 1) {
+        
+        y = charge(x, currentPhase, canvas, vmax, origin)
+        if (y < yOrigin) {
           if (x === 0) {
             ctx.moveTo(x, y);
           } else {
@@ -341,12 +191,9 @@ function SineWave({current}) {
           }
         }
 
-        // currentPhase = currentPhase + chargePhase
+        let diff = Math.abs(yOrigin - vmax - y)
 
-        let diff = Math.abs(60 - y)
-        diff *= diff
-
-        if (diff < 0.5) {
+        if (diff < 2) {
           isAmplitude = true
         }
 
@@ -356,23 +203,19 @@ function SineWave({current}) {
       if (isAmplitude) {
 
         endXPhase = endXPhase + phaseShift
-        // if ((endX - endXPhase) > 120) { endX = endX - endXPhase}
+        endX -= 0.1
 
-        if (endX !== 120) {
-          endX -= 0.1
-        }
+        let w = 0.06
 
         if (!wasAmplitude) {
-          sinePhase = Math.asin((y - canvas.height / 2) / 60) / 0.1;
+          sinePhase = Math.asin((y - yOrigin) / vmax) / w;
           wasAmplitude = true
         }
 
-        for (let x = endX; x <= endXSine; x += 0.1) {
+        for (let x = endX; x <= endXSine; x += 1  ) {
 
-          // Apply phase shift to the sine calculation
-          y = canvas.height / 2 - 60 * Math.sin((0.1 * x) + (currentPhase * 0.1) + sinePhase);
+          y = yOrigin - vmax * Math.sin((w * x) + (currentPhase * w) + (sinePhase));
           if (x === endX) {  // EXPERIMENT LATER: use y < canvas height / 2 for different effect
-            // ctx.beginPath();
             ctx.moveTo(x, y);
           } else {
             ctx.lineTo(x, y);
@@ -381,13 +224,13 @@ function SineWave({current}) {
         ctx.stroke();
       }
       
-      // Increase phase to move the wave to the left
       currentPhase += phaseShift;
       
       animationRef.current = requestAnimationFrame(animate);
     };
     
     if (state === 'start') {
+      handleLiveOrDead()
       animationRef.current = requestAnimationFrame(animate);
     }
     
@@ -399,117 +242,260 @@ function SineWave({current}) {
     };
   }, [state]);
 
-  // useEffect(() => {
-  //   const canvas = canvasRef.current;
-  //   const ctx = canvas.getContext('2d');
+  const orchestrate = ({currentPhase, strokeColor, vMax, ctx, canvas, endX, endXPhase, endXSine, sinePhase, phaseShift, origin}) => {
+    let result = renderGraph({currentPhase, strokeColor, vMax, ctx, canvas, endX, endXPhase, endXSine, sinePhase, phaseShift, origin})
+
+    if (result) {
+      testRender({currentPhase: result.currentPhase, strokeColor, vMax, ctx, canvas, endX: result.endX, endXPhase: result.endXPhase, endXSine: result.endXSine, sinePhase: result.sinePhase, phaseShift, origin})
+    }
+  }
+
+  const renderGraph = ({currentPhase, strokeColor, vMax, ctx, canvas, endX, endXPhase, endXSine, sinePhase, phaseShift, origin}) => {
     
-  //   // Fixed position where the end of the wave should be
-  //   const endX = 320;
+    let wasAmplitude = false
+    let nextXPhase = null
+
+    drawGrid(ctx, canvas)
+
+    // let yOrigin = (canvas.height * origin) / 100
+    let yOrigin = origin - 50
+
+    yOrigin *= 2
+
+    ctx.beginPath();
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 8;
+
+    for (let x = 0; x <= endX; x += 1) {
+
+      y = charge(x, currentPhase, canvas, vMax, origin)
+
+      if (y < canvas.height/2 - yOrigin) {
+        if (x === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+
+      let diff = Math.abs(canvas.height/2 - yOrigin - vMax - y)
+
+      if (diff < 1) {
+        isAmplitude = true
+        endXPhase = x
+        break
+      }
+
+      ctx.stroke();
+    }
+
+    if (isAmplitude) {
+
+      ctx.beginPath()
+
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 8;
+
+      let w = 0.06
+
+      if (!wasAmplitude) {
+        sinePhase = (Math.asin(((((-1 * y) + (canvas.height/2)) - yOrigin) + (currentPhase * w))/ vMax) / w) + (endXPhase + currentPhase);
+        wasAmplitude = true
+        console.log("sinephase", sinePhase)
+      }
+
+      for (let x = endXPhase; x <= endXSine; x += 1  ) {
+
+        // Apply phase shift to the sine calculation
+        y = canvas.height/2 - yOrigin - vMax * Math.sin((w * (x - (endXPhase + currentPhase))) + (currentPhase * w) - (sinePhase * w));
+        if (x === endX) { 
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+
+        if (x > endXPhase + 240 ) {
+          nextXPhase = x
+          break
+        }
+
+      }
+      ctx.stroke();
+    }
     
-  //   // Starting x position for the wave
-  //   let startPosition = 0;
+    // Increase phase to move the wave to the left
+    currentPhase += phaseShift;
+
+    return {
+      endX,
+      endXPhase: nextXPhase,
+      endXSine,
+      currentPhase,
+      sinePhase
+    }
+  }
+
+  const testRender = ({currentPhase, strokeColor, vMax, ctx, canvas, endX, endXPhase, endXSine, sinePhase, phaseShift, origin}) => {
     
-  //   // Track how much we've panned
-  //   let panOffset = 0;
+    // console.log("currentPhase", currentPhase, "endX", endX, "endXPhase", endXPhase, "endXSine", endXSine, 'sinePhase', sinePhase)
+    drawGrid(ctx, canvas)
+
+    // let yOrigin = (canvas.height * origin) / 100
+    let yOrigin = origin - 50
+
+    yOrigin *= 2
+
+    ctx.beginPath();
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 2;
     
-  //   const animate = () => {
-  //     // Clear the entire canvas
-  //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath()
+
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 12;
+
+    let w = 0.06
+
+    console.log(endXPhase + currentPhase, endXPhase, currentPhase)
+
+    if (endXPhase) {
+      for (let x = endXPhase; x <= endX; x += 1  ) {
+
+        // Apply phase shift to the sine calculation
+        y = canvas.height/2 - yOrigin - vMax * Math.sin((w * x) + (currentPhase * w) + (sinePhase * w));
+        if (x === endX) { 
+          ctx.moveTo(x, y);
+        } else if(y<canvas.height/2 - yOrigin) {
+          ctx.lineTo(x, y);
+        }
+      }
       
-  //     // Save the current canvas state
-  //     ctx.save();
-      
-  //     // Apply panning transformation (moving everything left)
-  //     ctx.translate(-panOffset, 0);
-      
-  //     // Draw reference lines (these will also pan)
-  //     ctx.beginPath();
-  //     ctx.strokeStyle = "#555555";
-  //     ctx.moveTo(0, canvas.height / 2);
-  //     ctx.lineTo(canvas.width + panOffset, canvas.height / 2);
-  //     ctx.stroke();
-      
-  //     ctx.beginPath();
-  //     ctx.strokeStyle = "#555555";
-  //     ctx.moveTo(240, 0);
-  //     ctx.lineTo(240, canvas.height);
-  //     ctx.stroke();
-      
-  //     // Draw sine wave
-  //     ctx.beginPath();
-  //     ctx.strokeStyle = "#a7ff0f";
-  //     ctx.lineWidth = 2;
-      
-  //     // Calculate total length of wave we need to draw
-  //     // (ensure we draw enough to fill screen after panning)
-  //     const totalLength = endX + panOffset;
-      
-  //     // Starting point of the wave
-  //     startPosition = panOffset;
-      
-  //     for (let x = startPosition; x <= totalLength; x += 2) {
-  //       const y = canvas.height / 2 - 60 * Math.sin(0.04 * x - phaseOffset);
-        
-  //       if (x === startPosition) {
-  //         ctx.moveTo(x, y);
-  //       } else {
-  //         ctx.lineTo(x, y);
-  //       }
-        
-  //       // Draw the end point marker when we reach endX
-  //       if (x >= endX && x < endX + 2) {
-  //         ctx.fillStyle = "#a7ff0f";
-  //         ctx.fillRect(x, y, 2, 2);
-  //       }
-  //     }
-  //     ctx.stroke();
-      
-  //     // Restore canvas state (removes the translation for the next frame)
-  //     ctx.restore();
-      
-  //     // Increase pan offset for next frame
-  //     panOffset += 2.5;
-      
-  //     // Print the current position for debugging
-  //     console.log("Pan offset:", panOffset, "End position:", endX);
-      
-  //     // Continue animation
-  //     animationRef.current = requestAnimationFrame(animate);
-  //   };
-    
-  //   if (state === 'start') {
-  //     animationRef.current = requestAnimationFrame(animate);
-  //   }
-    
-  //   // Cleanup function
-  //   return () => {
-  //     if (animationRef.current) {
-  //       cancelAnimationFrame(animationRef.current);
-  //     }
-  //   };
-  // }, [state, phaseOffset]);
+    }
+    ctx.stroke();
+  }
+
+  const handleLiveOrDead = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+
+    if (liveOrDead === 'live') {
+      return
+    } else {
+      setLiveOrDead('live')
+      setSliderVal(100)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      drawGrid(ctx, canvas)
+    }
+  }
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+
+    let endX = 680;
+    let endXPhase = 0;
+    let endXSine = endX;
+    let sinePhase = null;
+    let chargePhase = 0.3;
+    let phaseShift = 0.1;
+
+    let currentPhase = (((100 - sliderVal) * endX) / 100) * -1
+
+    if ( sliderVal < 100) {
+
+      setLiveOrDead("dead")
+
+      if (all) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        orchestrate({currentPhase, vMax: allVmax[0], origin: origin, strokeColor: "#a7ff0f", ctx, canvas, endX, endXPhase, endXSine, sinePhase, chargePhase, phaseShift})
+        orchestrate({currentPhase, vMax: allVmax[1], origin: origin - 50, strokeColor: "#ff592b", ctx, canvas, endX, endXPhase, endXSine, sinePhase, chargePhase, phaseShift})
+        orchestrate({currentPhase, vMax: allVmax[2], origin: origin + 50, strokeColor: "#BaBAFF", ctx, canvas, endX, endXPhase, endXSine, sinePhase, chargePhase, phaseShift})
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        orchestrate({currentPhase, vMax: vmax, strokeColor: "#a7ff0f", ctx, canvas, endX, endXPhase, endXSine, sinePhase, chargePhase, phaseShift, origin})
+      }
+
+    } else {
+      setLiveOrDead("live")
+    }
+
+  }, [sliderVal, vmax, allVmax, origin])
+
+  useEffect(() => {
+
+    if (current) {
+      setVmax(current?.vmax)
+      setVmaxInit(current?.vmax)
+    } 
+    if (scopeList) {
+      setAllVmaxInit(scopeList.map(v => v.vmax))
+      setAllVmax(scopeList.map(v => v.vmax))
+    }
+  }, [current, scopeList])
   
   return (
-    <div className="flex justify-center p-[6px] bg-white/20 backdrop-blur-lg border border-white/30 rounded-lg shadow-lg">
+    <div className="flex bg-black pl-[8px] py-[8px] border border-[#636363] rounded-[36px] shadow-lg">
 
-      <div className=' flex space-x-[16px] bg-[#0c0c0c] rounded-lg w-[40%] text-[#152110]'>
-        <button 
-          className="px-4 py-2 bg-[#b3b785]  w-[90px] h-fit rounded-md hover:bg-blue-600" 
-          onClick={() => handleClick('start')}
-        >
-          Start
-        </button>
-        <button 
-          className="px-4 py-2 bg-[#a1845f] w-[90px] h-fit rounded-md hover:bg-red-600" 
-          onClick={() => handleClick('end')}
-        >
-          End
-        </button>
-        <p>{state === 'start' ? "Charging/Oscillating" : state === 'end' ? "Discharging" : "Ready"}</p>
+      <div className='bg-[#353535] rounded-[34px] w-[300px] h-[268px] text-[#152110] p-[11px]'>
+        
+        <div className='bg-black rounded-[30px] pt-[9px] px-[18px]'>
+
+          <div className='flex justify-between text-white'>
+            <button className='bg-[#FF761A] rounded-[44px] px-[8px]'>Vertical</button>
+            <button>Horizontal</button>
+            <button>Trigger</button>
+          </div>
+
+          <div className='flex items-end text-[#F4F4F4] px-[8px] mt-[18px]'>
+            <div className='flex w-full items-center space-x-[4px]'>
+              <p>48s</p>
+              <p className='text-[#559AFF] text-[14px]'>{state === 'start' ? "Charging/Oscillating" : state === 'end' ? "Discharging" : "Ready"}</p>
+            </div>
+            <div className='text-[12px] leading-3'>
+              <p className='text-[16px] text-[#FF541F]'>0c14</p>
+              <p>Resistor</p>
+            </div>
+          </div>
+          <div className='mt-[8px] pb-[8px]'>
+            <StepSlider state={stepSliderVal} vmaxInit={vmaxInit} allVmaxInit={allVmaxInit} setAllVmax={setAllVmax} setVmax={setVmax}  />
+          </div>
+        </div>
+        <div className='flex h-[50%] w-full pl-[12px]'>
+          <div className='flex flex-col w-[50%] mt-[12px]'>
+            <button onClick={() => handleLiveOrDead()} className={`${liveOrDead === "live" ? ("bg-[#00E258] text-[#003824]") : liveOrDead === "dead" && ("bg-[#ff592b] text-[#300404]")} w-[64px] rounded-[6px]`}>
+              {liveOrDead === "live" ? ("Live") : liveOrDead === "dead" && ("Dead")}
+            </button>
+            <div className='w-full flex mt-[8px] space-x-2  text-white'>
+              <button 
+                className="" 
+                onClick={() => handleClick('start')}
+              >
+                Start
+              </button>
+              <button 
+                className="" 
+                onClick={() => handleClick('end')}
+              >
+                End
+              </button>
+
+              <p>{vmax}</p>
+            </div>
+            <p className='text-white'>All {all ? "true" : "false"}</p>
+
+          </div>
+          <div className='w-[74%] h-[100%] '>
+            <OscilloscopeKnob origin={origin} setOrigin={setOrigin} />
+          </div>
+        </div>
       </div>
-      <div className="ml-[2px] flex w-fit justify-center items-center bg-black/35 backdrop-blur-lg rounded-lg overflow-hidden">
+
+      <div className="ml-[2px] flex w-fulljustify-center items-center bg-black backdrop-blur-lg rounded-lg mr-[12px] overflow-hidden">
         <div className="absolute bg-gradient-to-br from-slate-300/20 via-slate-100/10 to-gray-500/30 mix-blend-overlay"></div>
-        <canvas ref={canvasRef} width={700} height={200} />
+        <canvas ref={canvasRef} width={700} height={260} />
+        <div className='absolute bottom-[0px] w-full'>
+          <CanvasSLider state={sliderVal} setSliderVal={setSliderVal}/>
+        </div>
       </div>
     </div>
   );

@@ -157,3 +157,5 @@ export const useStore = create((set) => ({
 }));
 
 export default useStore;
+
+// useStore.subscribe((state, oldState) => console.log(state, oldState))

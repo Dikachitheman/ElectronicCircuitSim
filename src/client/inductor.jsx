@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export const Inductor = ({id=null, val, thisSelected, setThisSelected, type = "Inductor", xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint}) => {
+export const Inductor = ({id=null, val, thisSelected, setThisSelected, type = "Inductor", xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint, setSecondClick}) => {
   const [pointA, setPointA] = useState({ x: xA, y: yA });
   const [pointB, setPointB] = useState({ x: xB, y: yB });
 
@@ -10,9 +10,11 @@ export const Inductor = ({id=null, val, thisSelected, setThisSelected, type = "I
       if (e === 'start') {
         // console.log("points start", points.start)
         setExistingPoint(pointA)
+        // setSecondClick(true)
       } else if (e === 'end') {
         // console.log("points end", points.end)
         setExistingPoint(pointB)
+        // setSecondClick(true)
       }
     }
 
@@ -197,9 +199,22 @@ export const Inductor = ({id=null, val, thisSelected, setThisSelected, type = "I
             d={path}
             fill="none"
             // stroke="url(#wireGradient)"
-            onClick={()=>setThisSelected(id)}
+            // onClick={()=>setThisSelected(id)} STOPPED WORKING
+            className={` ${ thisSelected === id ? ("stroke-yellow-400/0") : ("stroke-blue-500/0")}`}
+            strokeWidth="6"
+            onMouseDown={() => setThisSelected(id)}
+          />
+        )}
+
+        {(xA !== null && yA !== null && xB !== null && yB !== null) && (
+          <path
+            d={path}
+            fill="none"
+            // stroke="url(#wireGradient)"
+            // onClick={()=>setThisSelected(id)} STOPPED WORKING
             className={` ${ thisSelected === id ? ("stroke-yellow-400") : ("stroke-blue-500")}`}
             strokeWidth="1"
+            onMouseDown={() => setThisSelected(id)}
           />
         )}
 

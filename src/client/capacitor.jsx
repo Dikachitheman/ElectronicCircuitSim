@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Capacitor", xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint}) => {
+export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Capacitor", xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint, setSecondClick}) => {
   const [pointA, setPointA] = useState({ x: xA, y: yA });
   const [pointB, setPointB] = useState({ x: xB, y: yB });
 
@@ -10,9 +10,11 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
       if (e === 'start') {
         console.log("points start", pointA)
         setExistingPoint(pointA)
+        // setSecondClick(true)
       } else if (e === 'end') {
         console.log("points end", pointB)
         setExistingPoint(pointB)
+        // setSecondClick(true)
       }
     }
 
@@ -198,9 +200,22 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
             d={path}
             fill="none"
             // stroke="url(#wireGradient)"
-            onClick={()=>setThisSelected(id)}
-            className={` ${ thisSelected === id ? ("stroke-yellow-400") : ("stroke-blue-500")}`}
+            // onClick={()=>setThisSelected(id)} STOPPED WORKING
+            className={` ${ thisSelected === id ? ("stroke-yellow-400/0") : ("stroke-white/0")}`}
+            strokeWidth="6"
+            onMouseDown={() => setThisSelected(id)}
+          />
+        )}
+
+        {(xA !== null && yA !== null && xB !== null && yB !== null) && (
+          <path
+            d={path}
+            fill="none"
+            // stroke="url(#wireGradient)"
+            // onClick={()=>setThisSelected(id)} STOPPED WORKING
+            className={` ${ thisSelected === id ? ("stroke-orange-400") : ("stroke-blue-500")}`}
             strokeWidth="1"
+            onMouseDown={() => setThisSelected(id)}
           />
         )}
 

@@ -1,0 +1,45 @@
+      {/* {
+        activeTab && (
+          <div className={activeTab==="canvas"? "absolute top-[150px] w-screen": "absolute bottom-[40px] w-fit left-[28%]" }>
+            <SelectTab tab={activeTab}/>
+          </div>
+        )
+      } */}
+
+      {/* <div className='absolute top-[140px] w-fit right-[8%] text-[44px] text-white'>
+        <div onClick={() => setActiveTab("canvas")}>Canvas</div>
+        <div onClick={() => setActiveTab("viewBox")}>ViewBox</div>
+        <div onClick={() => setActiveTab("scope")}>Scope</div>
+        <div onClick={() => setActiveTab("prompt")}>Prompt</div>
+      </div> */}
+
+
+      const ViewBox = () => {
+        return (
+          <div className='absolute bottom-[140px] left-[28%] text-white' onClick={() => handlePipeline()}>
+            <button>Generate</button>
+          </div>
+        )
+      }
+    
+      const Prompt = () => {
+        return (
+          <div className='absolute bottom-[140px] left-[28%] text-white' onClick={() => handlePipeline()}>
+            <button>Generate</button>
+          </div>
+        )
+      }
+    
+      const SelectTab = (prop) => {
+    
+        const ComponentMap = {
+          prompt: <Prompt />,
+          scope: <Sine pvr={scopeList}/>,
+          canvas: <Canvas setViewBox={setViewBox} isDragging={isDragging} setDrawCoords={setDrawCoords} setActivateTool={setActivateTool}/>,
+          viewBox: <ViewBox />
+        }
+    
+        const Component = ComponentMap[prop.tab]
+    
+        return Component
+      }

@@ -22,15 +22,17 @@ class ContextManager {
 }
 
 class Node {
-    constructor(execute, args) {
-        this.execute = execute;
+    constructor(funcMap, execute, args) {
+        this.funcMap = funcMap;
+        this.execute = execute; // Key
         this.args = args;
         this.head = null;
         this.tail = null;
     }
 
     async run() {
-        return await this.execute({ctx: this.args.ctx, input: this.args.input, id: this.args.id});
+        // await this.execute({ctx: this.args.ctx, input: this.args.input, id: this.args.id});
+        return await this.funcMap[this.execute]({ctx: this.args.ctx, input: this.args.input, id: this.args.id})
     }
 }
 
@@ -47,7 +49,7 @@ class Channel {
         this.nodes.push(node)
     }
 
-    addNode(node) {
+    chain(node) {
         if (!this.start) {
             this.start = node;
             this.last = node;
@@ -85,12 +87,12 @@ class Channel {
     async run() {
         let currentNode = this.start
         while(currentNode) {
-            // await currentNode.run()
+            await currentNode.run()
             this.nodes.push(currentNode)
             currentNode = currentNode.tail
         }
 
-        await this.process()
+        // await this.process()
     }
 }
 
@@ -114,8 +116,8 @@ export class Pipeline {
                 throw new Error(`Function "${split[0]}" not registered`);
             }
             
-            const node = new Node(this.functions[split[0]], {ctx: this.contextManager, input, id});
-            channel.addNode(node);
+            const node = new Node(this.functions, split[0], {ctx: this.contextManager, input, id});
+            channel.chain(node);
         });
 
         this.channels.push(channel);

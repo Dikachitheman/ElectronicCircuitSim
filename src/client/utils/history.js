@@ -113,8 +113,8 @@ export class HistoryManager {
     
     // Get component name by ID
     getComponentNameById(id) {
-      console.log("history m id", id)
-      console.log("xoxo", this.selections)
+      // console.log("history m id", id)
+      // console.log("xoxo", this.selections)
       const component = this.getComponentById(id);
       return component ? component.component : null;
     }

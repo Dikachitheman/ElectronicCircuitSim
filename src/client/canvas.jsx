@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import AnimatedGradientBorder, { ToggleButton } from './toggle';
+import { PenTool, SparkleIcon } from 'lucide-react';
 
 export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool}) => {
     const canvasRef = useRef(null);
@@ -8,7 +10,7 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
     const [strokeColor, setStrokeColor] = useState('#FF0DF4');
     const [dsBuffer, setDsBuffer] = useState(null)
     const [preview, setPreview] = useState(false)
-    const [isActive, setIsActive] = useState(true)
+    const [isActive, setIsActive] = useState(false)
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -253,34 +255,83 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
         }, [key, callback]);
     };
 
-    useKeyPress("d", downloadImage)
+    // useKeyPress("d", downloadImage)
+    // RECALL: add button for download for when you want to record video
 
-    useKeyPress("k", downloadImage)
+    // useKeyPress("k", downloadImage)
 
     return (
         <div className="">
 
-            {
-                isActive && (
-                    <div className="border ">
-                        <canvas
-                            id="drawing-board"
-                            ref={canvasRef}
-                            onMouseDown={startDrawing}
-                            onMouseMove={draw}
-                            onMouseUp={stopDrawing}
-                            onMouseLeave={stopDrawing}
-                            // style={{ border: '11px solid #111'  }}
-                        />
-                    </div>
-                )
-            }
+            <div className={` ${isActive ? '' : 'hidden'}`}>
+                <canvas
+                    id="drawing-board"
+                    ref={canvasRef}
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    // style={{ border: '11px solid #111'  }}
+                />
+            </div>
 
-            <div className=" bg-white/10 backdrop-blur-lg
-             border-white/30 rounded-lg shadow-lg overflow-hidden border w-[300px]
-             absolute top-[0px] right-[86px] text-white">
-                
-                <div className="">
+            <div className=" bg-[#03020C] backdrop-blur-lg
+             border-white/30 shadow-lg overflow-hidden border w-[360px]
+             absolute top-[0px] right-[40px] text-white rounded-[40px] pt-[12px] px-[14px] pb-[10px]">
+
+                <div className='flex justify-between'>
+                    <div className='flex space-x-[6px]'>
+                        <div className='text-white'>
+                            <PenTool />
+                        </div>
+                        <div>
+                            Magic Pen
+                        </div>
+                    </div>
+                    <div className=''>
+                        <ToggleButton onChange={setIsActive} />
+                    </div>
+                </div>
+
+                <div className='flex justify-center w-full'>
+                <div className='space-x-[28px] flex w-fit justify-center items-center mt-[28px] bg-[#271e3f] rounded-[14px] py-[8px] px-[8px]'>
+                    <div className='rounded-[12px] text-[18px] px-[18px] py-[2px] flex items-center space-x-[6px] bg-gradient-to-r from-[#0000FF] via-[#ff00a2] to-[#00bfff]'>
+                        <div>
+                            <SparkleIcon/>
+                        </div>
+                        <div>
+                            <button className='' onClick={() => handleActivateTool()}>Enter</button>
+                        </div>
+                    </div>
+                    <button className='rounded-[10px] bg-[#D3D3D3] text-[#353535] px-[14px] py-[]' onClick={clearCanvas}>Clear</button>
+                </div>
+                </div>
+
+                <div className='w-full flex flex-col items-center mt-[34px] '>
+
+                    <AnimatedGradientBorder text={"Capacitor"}/>
+
+                    <div className='flex space-x-[8px] text-[30px] text-[#D7D7FF] items-center bg-[#3A3460] rounded-[12px] px-[26px] opacity-45'>
+                        <div>
+                            <SparkleIcon />
+                        </div>
+                        <p>Resistor</p>
+                    </div>
+                </div>
+
+                <div className='bg-[#302D51] rounded-[28px] flex justify-between px-[14px] py-[12px] mt-[34px]'>
+                    <div className='bg-[#FF761A] rounded-[44px] py-[4px] px-[12px]'>Component</div>
+                    <div className='py-[4px] px-[12px]'>Rating</div>
+                    <div className='py-[4px] px-[12px]'>Draw</div>
+                </div>
+
+            </div>
+        </div>
+    );
+};
+
+
+                /* <div className="">
                     <label htmlFor="stroke">Stroke Color:</label>
                     <input 
                         id="stroke" 
@@ -303,15 +354,4 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
                         onChange={(e) => setLineWidth(parseInt(e.target.value))}
                         className='text-black'
                     />
-                </div>
-                
-                <button className='ml-[14px] mt-[22px]' onClick={downloadImage}>Download</button>
-                <button className='ml-[14px] mt-[22px]' onClick={previewDS}>Downscale</button>
-                <button className='ml-[14px] mt-[22px]' onClick={clearCanvas}>Clear</button>
-                <button className='ml-[14px] mt-[22px]' onClick={() => setIsActive(!isActive)}>Eye</button>
-                <button className='ml-[14px] mt-[22px]' onClick={() => handleActivateTool()}>Activate</button>
-            </div>
-
-        </div>
-    );
-};
+                </div> */

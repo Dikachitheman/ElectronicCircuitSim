@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 
 
-export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint}) => {
+export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint, setSecondClick}) => {
   const [pointA, setPointA] = useState({ x: xA, y: yA });
   const [pointB, setPointB] = useState({ x: xB, y: yB });
 
@@ -76,11 +76,18 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
       if (e === 'start') {
         // console.log("points start", points.start)
         setExistingPoint(pointA)
+        // setSecondClick(true)
       } else if (e === 'end') {
         // console.log("points end", points.end)
         setExistingPoint(pointB)
+        // setSecondClick(true)
       }
     }
+  
+  const handleClick = () => {
+    console.log("here")
+    setThisSelected(id)
+  }
     
   return (
     <>
@@ -96,13 +103,32 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
         {
           (xA !== null && yA !== null && xB !== null && yB !== null) && (
             <>
+              <path
+                d={pathD}
+                fill="none"
+                onClick={()=>handleClick()} STOPPED WORKING
+                // stroke="url(#wireGradient)"
+                className={` ${ thisSelected === id ? ("stroke-yellow-400/0") : ("stroke-blue-500/0")}`}
+                strokeWidth="6"
+                onMouseDown={() => handleClick()}
+              />
+
+              <text x={(xA + xB + 40) / 2} y={(yA + yB + 40) / 2} className="text">id {id}, val {val}</text>
+            </>
+          )
+        }
+
+        {
+          (xA !== null && yA !== null && xB !== null && yB !== null) && (
+            <>
             <path
               d={pathD}
               fill="none"
-              onClick={()=>setThisSelected(id)}
+              // onClick={()=>handleClick()} STOPPED WORKING
               // stroke="url(#wireGradient)"
               className={` ${ thisSelected === id ? ("stroke-yellow-400") : ("stroke-blue-500")}`}
               strokeWidth="1"
+              onMouseDown={() => handleClick()}
             />
 
             <text x={(xA + xB + 40) / 2} y={(yA + yB + 40) / 2} className="text">id {id}, val {val}</text>
@@ -156,7 +182,7 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
           )
         }
 
-      <div className="text-black">{d}</div>
+      <div onClick={()=>handleClick()} className="text-black">{d}</div>
      </>
   );
 };
