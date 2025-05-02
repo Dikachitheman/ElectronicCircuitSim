@@ -239,7 +239,7 @@ export function ComponentSlider({state, selection, setSelection, id}) {
       const updatedSelection = [...selection];
       updatedSelection[index] = {
         ...updatedSelection[index],
-        value: val + unit
+        value: Math.round(val * 100) / 100+ unit
       };
       
       setSelection(updatedSelection);
