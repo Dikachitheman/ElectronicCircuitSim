@@ -76,7 +76,7 @@ export const Render = () => {
   useEffect(() => {
 
     const findJunctionsPromise = new Promise((resolve) => {
-      const junctions = findJunctions(selection);
+      const junctions = findJunctions(filteredSelection);
       // console.log("junctions", junctions)
       resolve(junctions);
     });
@@ -127,8 +127,7 @@ export const Render = () => {
         let updatedSelection = [...selection];
 
         peakVoltageRegister.forEach((p) => {
-          const index = updatedSelection.findIndex(item => item.id === p.id);
-          
+          const index = updatedSelection.findIndex(item => item.id === p.comp);
           if (index !== -1) {
             updatedSelection[index] = {
               ...updatedSelection[index],
@@ -171,7 +170,7 @@ export const Render = () => {
   }
 
   useEffect(() => {
-    console.log("seelction", selection)
+    console.log("selction", selection)
 
     if (selection.length > 0) {
       setIsExisting(true)
@@ -488,7 +487,7 @@ export const Render = () => {
       compId = selection.length + 1
     }
 
-    const init = {id: compId, component: comp, value: value, orientation: orientation, coords: {}}
+    const init = {id: compId, component: comp, value: value, orientation: orientation, coords: {}, current: null, voltage: null, power: null, frequency: null}
     let offsetx = 0
     let offsety = 156
 
@@ -758,11 +757,12 @@ export const Render = () => {
       
       if (itemHistory.length === 0) return false;
       
-      const liveOrDead = itemHistory[itemHistory.length - 1].action;
+      const action = itemHistory[itemHistory.length - 1].action;
       
-      return liveOrDead === "ADD";
+      return action === "ADD";
     });
     
+    console.log("filtered", filteredSelection)
     setFilteredSelection(filtered);
   }, [selection, history]);
 
@@ -835,10 +835,6 @@ export const Render = () => {
       console.error(e)
     }
   }
-
-  // useEffect(() => {
-  //   console.log(store)
-  // }, [store])
 
   const getLocalStorageFiles = () => {
     const fileList = [];
@@ -1155,12 +1151,12 @@ export const Render = () => {
     <div className="w-full h-screen relative cursor-default">
 
       <div className='absolute top-[150px] w-screen'>
-        {/* <Canvas setViewBox={setViewBox} isDragging={isDragging} setDrawCoords={setDrawCoords} setActivateTool={setActivateTool}/> */}
+        <Canvas setViewBox={setViewBox} isDragging={isDragging} setDrawCoords={setDrawCoords} setActivateTool={setActivateTool}/>
       </div>
 
       <div className='absolute w-[100%]'>
         <Draggable initialPosition={{ x: 440, y: 620 }} scale={1}>
-          {/* <Sine pvr={scopeList}/> */}
+          <Sine pvr={scopeList}/>
         </Draggable>
       </div>
 
@@ -1383,11 +1379,11 @@ export const Render = () => {
             </button>
           </div>
 
-          <div className=" flex items-center ml-[14px] text-white"> 
+          <div className=" flex items-center ml-[8px] text-[#ccc]"> 
             <p className='mr-[12px]'>Orientation</p>
             <button
               onClick={() => changeOrientation()}
-              className={`py-[2px] mr-[14px] w-[104px] rounded-[44px] bg-[#141414] border-white/60 border-[2px] ${
+              className={`py-[2px] mr-[34px] w-[104px] rounded-[44px] bg-[#141414] border-white/60 border-[2px] ${
                 isVertical === 'v' ? 'text-[#ff5d2c]' : isVertical === 'h' ? 'text-[#0ad2ff] ' : isVertical === 'none' && 'text-orange-200 '
               }`}
             >
@@ -1486,7 +1482,6 @@ export const Render = () => {
                               </div>
                               <p className='text-[#FF541F] leading-[12px]'>0xc{item.id}</p>
                             </div>
-
                             
                             <div className='flex space-x-[6px] ml-[8px]'>
                               <div className=' bg-[#15FFAB] text-[#173228] text-[18px] px-[12px] rounded-[24px]' onClick={()=>handleAddScope(item.id)}>Scope</div>
@@ -1501,11 +1496,11 @@ export const Render = () => {
 
                             <div className='flex justify-between px-[14px] mt-[24px] mx-[8px] bg-[#353535] py-[8px] mb-[8px] rounded-[22px]'>
                               <div>
-                                <p className='text-[14px]'>12.348</p>
+                                <p className='text-[14px]'>{Math.round(item.current * 1000) / 1000}</p>
                                 <p className='text-[12px] text-[#ff19ab]'>Amps</p>
                               </div>
                               <div>
-                                <p className='text-[14px]'>12.348</p>
+                                <p className='text-[14px]'>{Math.round(item.voltage * 1000) / 1000}</p>
                                 <p className='text-[12px] text-[#19ffe4]'>Volts</p>
                               </div>
                               <div>
@@ -1520,7 +1515,7 @@ export const Render = () => {
 
                           </div>
                         ) : (
-                          <div onClick={()=>setOpen(item.id)} className='flex items-center px-[24px] h-[50px] bg-white/10 backdrop-blur-lg border border-white/10 hover:border-white/30 rounded-lg shadow-lg text-[#c1c1c1]'>
+                          <div onClick={()=>setOpen(item.id)} className={`flex items-center px-[24px] h-[50px] bg-white/10 backdrop-blur-lg border border-white/10 hover:border-white/30 rounded-lg shadow-lg ${ thisSelected === item.id ? ("text-[#ffe121]") : ("text-[#e9e9e9]")}`}>
                             <p className='mr-[12px]'>{item.value}</p>
                             <p>{item.id}</p>
                             <div className='grow flex justify-end'>
@@ -1607,7 +1602,7 @@ export const Render = () => {
         }
       </svg>
 
-      <div className='hidden absolute top-[520px] right-[40px] border-[#848484] border bg-[#232323] pt-[12px] px-[14px] rounded-[28px]'>
+      <div className=' absolute top-[520px] right-[40px] border-[#848484] border bg-[#232323] pt-[12px] px-[14px] rounded-[28px]'>
         <svg 
           ref={svgPanRef}
           onClick={handleSvgClick}
@@ -1733,7 +1728,6 @@ const CompValue = ({ value, setSelection, selection, id }) => {
     }
   }, [selection, id]);
   
-
   return (
     <div onClick={() => !editing && setEditing(true)} className="cursor-pointer">
       {editing ? (
