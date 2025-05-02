@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CapacitorIcon } from '../assets/svgIcon';
 import CanvasSLider, { OscilloscopeKnob, StepSlider } from './slider';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function Sine({pvr}) { // RECALL: use this instead pvr2
   const [isActive, setIsActive] = useState(true);
@@ -104,7 +105,9 @@ function SineWave({current, all, scopeList}) {
   const [allVmaxInit, setAllVmaxInit] = useState(null)
   const [allVmax, setAllVmax] = useState(null)
   const [origin, setOrigin] = useState(50)
+  const [w, setw] = useState(0.06)
   const animationRef = useRef(null);
+  const [active, setActive] = useState("v")
   const stateRef = useRef(null)
 
   let isAmplitude = false
@@ -243,11 +246,13 @@ function SineWave({current, all, scopeList}) {
   }, [state]);
 
   const orchestrate = ({currentPhase, strokeColor, vMax, ctx, canvas, endX, endXPhase, endXSine, sinePhase, phaseShift, origin}) => {
-    let result = renderGraph({currentPhase, strokeColor, vMax, ctx, canvas, endX, endXPhase, endXSine, sinePhase, phaseShift, origin})
+    // let result = renderGraph({currentPhase, strokeColor, vMax, ctx, canvas, endX, endXPhase, endXSine, sinePhase, phaseShift, origin})
 
-    if (result) {
-      testRender({currentPhase: result.currentPhase, strokeColor, vMax, ctx, canvas, endX: result.endX, endXPhase: result.endXPhase, endXSine: result.endXSine, sinePhase: result.sinePhase, phaseShift, origin})
-    }
+    // if (result) {
+    //   testRender({currentPhase: result.currentPhase, strokeColor, vMax, ctx, canvas, endX: result.endX, endXPhase: result.endXPhase, endXSine: result.endXSine, sinePhase: result.sinePhase, phaseShift, origin})
+    // }
+
+    sine({currentPhase, strokeColor, vMax, ctx, canvas, endX, endXPhase, endXSine, sinePhase, phaseShift, origin})
   }
 
   const renderGraph = ({currentPhase, strokeColor, vMax, ctx, canvas, endX, endXPhase, endXSine, sinePhase, phaseShift, origin}) => {
@@ -296,7 +301,6 @@ function SineWave({current, all, scopeList}) {
       ctx.strokeStyle = strokeColor;
       ctx.lineWidth = 8;
 
-      let w = 0.06
 
       if (!wasAmplitude) {
         sinePhase = (Math.asin(((((-1 * y) + (canvas.height/2)) - yOrigin) + (currentPhase * w))/ vMax) / w) + (endXPhase + currentPhase);
@@ -374,6 +378,39 @@ function SineWave({current, all, scopeList}) {
     ctx.stroke();
   }
 
+  const sine = ({currentPhase, strokeColor, vMax, ctx, canvas, endX, endXPhase, endXSine, sinePhase, phaseShift, origin}) => {
+    drawGrid(ctx, canvas)
+
+    // let yOrigin = (canvas.height * origin) / 100
+    let yOrigin = origin - 50
+
+    yOrigin *= 2
+
+    ctx.beginPath();
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 2;
+    
+    ctx.beginPath()
+
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 12;
+
+    console.log(endXPhase + currentPhase, endXPhase, currentPhase)
+
+    for (let x = 0; x <= endX; x += 1  ) {
+
+      // Apply phase shift to the sine calculation
+      y = canvas.height/2 - yOrigin - vMax * Math.sin((w * (x + currentPhase)) + (currentPhase * w) + (sinePhase * w));
+      if (x === endX) { 
+        ctx.moveTo(x, y);
+      } else  {
+        ctx.lineTo(x, y);
+      }
+    }
+      
+    ctx.stroke();
+  }
+
   const handleLiveOrDead = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -419,7 +456,7 @@ function SineWave({current, all, scopeList}) {
       setLiveOrDead("live")
     }
 
-  }, [sliderVal, vmax, allVmax, origin])
+  }, [sliderVal, vmax, allVmax, origin, w])
 
   useEffect(() => {
 
@@ -441,9 +478,9 @@ function SineWave({current, all, scopeList}) {
         <div className='bg-black rounded-[30px] pt-[9px] px-[18px]'>
 
           <div className='flex justify-between text-white'>
-            <button className='bg-[#FF761A] rounded-[44px] px-[8px]'>Vertical</button>
-            <button>Horizontal</button>
-            <button>Trigger</button>
+            <button className={`${active === "v" && "bg-[#FF761A]"} rounded-[44px] px-[8px]`} onClick={() => setActive("v")}>Vertical</button>
+            <button className={`${active === "h" && "bg-[#FF761A]"} rounded-[44px] px-[8px]`} onClick={() => setActive("h")}>Horizontal</button>
+            <button className={`${active === "t" && "bg-[#FF761A]"} rounded-[44px] px-[8px]`} onClick={() => setActive("t")}>Trigger</button>
           </div>
 
           <div className='flex items-end text-[#F4F4F4] px-[8px] mt-[18px]'>
@@ -457,7 +494,13 @@ function SineWave({current, all, scopeList}) {
             </div>
           </div>
           <div className='mt-[8px] pb-[8px]'>
-            <StepSlider state={stepSliderVal} vmaxInit={vmaxInit} allVmaxInit={allVmaxInit} setAllVmax={setAllVmax} setVmax={setVmax}  />
+            {
+              active === "v" ? (
+                <StepSlider key={() => uuidv4()} state={stepSliderVal} active={active} w={w} setw={setw} vmaxInit={vmaxInit} allVmaxInit={allVmaxInit} setAllVmax={setAllVmax} setVmax={setVmax}  />
+              ) : (
+                <StepSlider key={() => uuidv4()} state={stepSliderVal} active={active} w={w} setw={setw} vmaxInit={vmaxInit} allVmaxInit={allVmaxInit} setAllVmax={setAllVmax} setVmax={setVmax}  />
+              )
+            }
           </div>
         </div>
         <div className='flex h-[50%] w-full pl-[12px]'>

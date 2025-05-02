@@ -225,15 +225,21 @@ export function ComponentSlider({state, selection, setSelection, id}) {
   const sliderRef = useRef(null);
   const isDragging = useRef(false);
 
+  function extractUnit(str) {
+    const match = str.match(/[a-zA-Z]+/g);
+    return match ? match.join('') : '';
+  }
+
   const updateSelection = () => {
     const index = selection.findIndex(item => item.id === id);
     let val = ((value * 2) / 100) * parseFloat(st)
+    let unit = extractUnit(st)
 
     if (index !== -1) {
       const updatedSelection = [...selection];
       updatedSelection[index] = {
         ...updatedSelection[index],
-        value: val
+        value: val + unit
       };
       
       setSelection(updatedSelection);
@@ -395,8 +401,8 @@ export function OtherSlider() {
     </div>
   );
 }
-
-export function StepSlider({state, vmaxInit, allVmaxInit, setAllVmax, setVmax}) {
+// 559AFF
+export function StepSlider({state, vmaxInit, allVmaxInit, setAllVmax, setVmax, w, setw, active}) {
   const [value, setValue] = useState(state);
   const totalSteps = 15;
   let temp = []
@@ -406,19 +412,25 @@ export function StepSlider({state, vmaxInit, allVmaxInit, setAllVmax, setVmax}) 
   };
 
   useEffect(() => {
-    let e = ((value) * vmaxInit * 2) / 14
-    e = Math.floor(e)
-    setVmax(e)
-
-    if (allVmaxInit) {
-      for (let i=0; i<allVmaxInit.length; i++) {
-        let e = (value * allVmaxInit[i] * 2) / 14
-        e = Math.floor(e)
-        temp.push(e)
+    if (active === "v") {
+      let e = ((value) * vmaxInit * 2) / 14
+      e = Math.floor(e)
+      setVmax(e)
+  
+      if (allVmaxInit && active === "v") {
+        for (let i=0; i<allVmaxInit.length; i++) {
+          let e = (value * allVmaxInit[i] * 2) / 14
+          e = Math.floor(e)
+          temp.push(e)
+        }
       }
+  
+      setAllVmax(temp)
+    } else if (active === "h") {
+      let e = ((value - 7) * 0.008) + 0.06
+      console.log("e", e)
+      setw(e)
     }
-
-    setAllVmax(temp)
 
   }, [value])
   
