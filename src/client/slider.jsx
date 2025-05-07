@@ -233,7 +233,7 @@ export function ComponentSlider({state, selection, setSelection, id}) {
   const updateSelection = () => {
     const index = selection.findIndex(item => item.id === id);
     let val = ((value * 2) / 100) * parseFloat(st)
-    let unit = extractUnit(st)
+    let unit = extractUnit(st) 
 
     if (index !== -1) {
       const updatedSelection = [...selection];

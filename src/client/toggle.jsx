@@ -1,4 +1,5 @@
-import { SparklesIcon } from "lucide-react";
+import { SparklesIcon, X } from "lucide-react";
+import { useRef } from "react";
 import { useState } from "react";
 
 export const ToggleButton = ({ initialOn = false, onChange }) => {
@@ -60,37 +61,87 @@ export default function AnimatedGradientBorder({text}) {
   );
 }
 
-export function IrisAI({enter}) {
-    return (
-      <div className="">
-        <div className="relative group">
-          {/* Animated gradient border container */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-[#0000FF] via-[#ff00a2] to-[#00ffae] rounded-[62px] transition duration-75 animate-gradient-x"></div>
-          
-          {/* Inner content */}
-          <div className="relative ring-1 ring-gray-700 py-[4px] flex space-x-[8px] text-[18px] text-[#D7D7FF] items-center bg-[#000000] rounded-[68px] px-[12px]">
-              <div onClick={enter}>
-                  <SparklesIcon />
-              </div>
-              <input className="bg-black placeholder-[#6c6c76] w-[144px] pl-[12px] font-[600]" placeholder="Ask Iris.ai"/>
+export function IrisAI({ enter }) {
+  const [active, setActive] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef(null);
+
+  const handleInputFocus = () => {
+    setActive(true);
+  };
+
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      enter(inputValue);
+      setInputValue('');
+      setActive(false);
+      inputRef.current.blur();
+    }
+  };
+
+  const handleClick = () => {
+    // if (inputValue.trim()) {
+    //   enter(inputValue);
+    //   setInputValue('');
+    //   setActive(false);
+    //   inputRef.current.blur();
+    // } else {
+    //   inputRef.current.focus();
+    //   setActive(true);
+    // }
+
+    setActive(false)
+    enter()
+  };
+
+  return (
+    <div className="w-full max-w-lg">
+      <div className="relative group">
+        {/* Animated gradient border container */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-[#0000FF] via-[#ff00a2] to-[#00ffae] rounded-full transition duration-75 animate-gradient-x"></div>
+        
+        {/* Inner content */}
+        <div className="relative ring-1 ring-gray-700 py-1 flex space-x-2 text-lg text-[#D7D7FF] items-center bg-black rounded-full px-3">
+          <div onClick={handleClick} className="cursor-pointer">
+            <SparklesIcon />
+          </div>
+          <input
+            ref={inputRef}
+            value={inputValue}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
+            onKeyDown={handleKeyDown}
+            className={`bg-black placeholder-[#6c6c76] font-semibold outline-none transition-all duration-300 ${
+              active ? "w-96" : "w-36"
+            } pl-3`}
+            placeholder="Ask Iris.ai"
+          />
+
+          <div onClick={() => setActive(false)} className="cursor-pointer text-[#636363]">
+            <X />
           </div>
         </div>
-        
-        {/* Add the necessary animation class */}
-        <style jsx>{`
-          @keyframes gradient-x {
-            0%, 100% {
-              background-position: 0% 50%;
-            }
-            50% {
-              background-position: 100% 50%;
-            }
-          }
-          .animate-gradient-x {
-            background-size: 200% 200%;
-            animation: gradient-x 1.6s ease infinite;
-          }
-        `}</style>
       </div>
-    );
-  }
+      
+      {/* Add the necessary animation styles */}
+      <style jsx>{`
+        @keyframes gradient-x {
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+        .animate-gradient-x {
+          background-size: 200% 200%;
+          animation: gradient-x 1.6s ease infinite;
+        }
+      `}</style>
+    </div>
+  );
+}

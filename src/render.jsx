@@ -1243,29 +1243,28 @@ export const Render = () => {
            text-white border rounded-[44px] py-[4px] px-[6px] bg-white/4 
             backdrop-blur-md border-white/10 shadow-lg items-center'>
 
-          <div className='relative space-x-[24px] flex items-center w-[24%] pl-[18px]'>
-            <div className='flex space-x-[8px]'>
+          <div className='relative space-x-[14px] flex items-center w-[24%] pl-[18px]'>
+            <div className='hover:bg-[#3a3850] rounded-[24px] py-[4px] px-[12px] flex'>
               <div><Home fill='white'/></div><p className=''>Home</p>
             </div>
-            <div className='flex space-x-[8px] text-white/60'>
+            <div className='hover:bg-[#3a3850] rounded-[24px] py-[4px] px-[12px] flex text-white/60'>
               <div><ArrowDownToLine /></div><p className=''>Options</p>
             </div>
-            <div className='flex space-x-[8px] text-white/60'>
+            <div className='hover:bg-[#3a3850] rounded-[24px] py-[4px] px-[12px] flex text-white/60'>
               <div><Save/></div><p className='' onClick={() => save(file)}>Save</p>
             </div>
-            <div className='flex space-x-[8px] text-white/60'>
+            <div className='hover:bg-[#3a3850] rounded-[24px] py-[4px] px-[12px] flex text-white/60'>
               <div><BookOpen/></div><p className='' onClick={() => handleFileList()}>Load</p>
-            </div>   
+            </div>
 
-
-            {
+          {
             fileListOpen && fileList && (
-              <div className="absolute left-[96px] top-[49px] w-48 bg-white border border-gray-300 shadow-lg rounded-lg p-2 text-black">
+              <div className="absolute left-[336px] space-y-[8px] top-[49px] w-48 bg-white border border-gray-300 shadow-lg rounded-lg p-2 text-black">
                 {fileList.map((filename, index) => (
                   <div 
                     key={index} 
                     onClick={() => loadSaved(filename)}
-                    className="file-item hover:text-white hover:bg-black"
+                    className="file-item pl-[8px] rounded-[24px] hover:text-white hover:bg-black"
                   >
                     {filename}
                   </div>
