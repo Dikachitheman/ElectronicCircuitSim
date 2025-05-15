@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { BadgeEuro, BadgeInfo } from 'lucide-react';
+import { cloneElement } from 'react';
 
 export default function CanvasSLider({state, setSliderVal}) {
   const [value, setValue] = useState(state);
@@ -155,8 +157,11 @@ export function PanSlider({state, setViewBox}) {
 
 export const Draggable = ({ children, initialPosition, scale }) => {
   const [position, setPosition] = useState({x: initialPosition.x / scale, y: initialPosition.y / scale});
+  const [cachePosition, setCachePosition] = useState({x: initialPosition.x / scale, y: initialPosition.y / scale})
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [left, setLeft] = useState(null)
+  const [top, setTop] = useState(null)
   const dragRef = useRef(null);
 
   // Handle mouse down to start dragging
@@ -178,12 +183,25 @@ export const Draggable = ({ children, initialPosition, scale }) => {
       x: (e.clientX - dragOffset.x) / scale,
       y: (e.clientY - dragOffset.y) / scale
     });
+    setCachePosition({
+      x: (e.clientX - dragOffset.x) / scale,
+      y: (e.clientY - dragOffset.y) / scale
+    });
   };
 
   // Handle mouse up to stop dragging
   const handleMouseUp = () => {
     setIsDragging(false);
   };
+
+  useEffect(() => {
+    console.log(left)
+    if (left) {
+      setPosition({x: left / scale, y: top / scale})
+    } else {
+      setPosition({x: cachePosition.x, y: cachePosition.y})
+    }
+  }, [left])
 
   // Add and remove event listeners
   useEffect(() => {
@@ -201,20 +219,27 @@ export const Draggable = ({ children, initialPosition, scale }) => {
     };
   }, [isDragging]);
 
+  const childrenWithProps = React.Children.map(children, child => {
+    if (React.isValidElement(child)) {
+      return cloneElement(child, { trigger: handleMouseDown, setLeft: setLeft, setTop: setTop });
+    }
+    return child;
+  });
+
   return (
     <div
       ref={dragRef}
-      onMouseDown={handleMouseDown}
       style={{
         position: 'absolute',
         left: `${position.x}px`,
         top: `${position.y}px`,
-        cursor: isDragging ? 'grabbing' : 'grab',
         zIndex: isDragging ? 1000 : 'auto',
-        userSelect: 'none'
+        userSelect: 'none',
+        transition: isDragging ? 'none' : 'left 0.3s ease-out, top 0.2s ease-out'
       }}
     >
-      {children}
+      {/* <div onMouseDown={handleMouseDown} className='text-white w-full flex justify-end' style={{ cursor: isDragging ? 'grabbing' : 'grab'}}><BadgeInfo/></div> */}
+      {childrenWithProps}
     </div>
   );
 };
@@ -465,6 +490,7 @@ export function StepSlider({state, vmaxInit, allVmaxInit, setAllVmax, setVmax, w
 export function OscilloscopeKnob({origin, setOrigin}) {
   const [value, setValue] = useState(origin);
   const knobRef = useRef(null);
+  const [currentAngle, setAngle] = useState(0)
 
   useEffect(() => {
     setOrigin(value)
@@ -516,7 +542,11 @@ export function OscilloscopeKnob({origin, setOrigin}) {
   const radius = 80; // This should match the arc radius
   const indicatorX = 100 + Math.cos(indicatorAngle) * radius;
   const indicatorY = 100 - Math.sin(indicatorAngle) * radius; // Negative because Y grows downward in SVG
-
+  
+  useEffect(() => {
+    setAngle(indicatorAngle)
+  }, [indicatorAngle])
+  
   return (
     <div className="relative w-full h-full mt-[4px]">
       {/* Arc background */}
@@ -562,6 +592,7 @@ export function OscilloscopeKnob({origin, setOrigin}) {
               {/* Tick marks */}
               {Array.from({ length: 11 }).map((_, i) => {
                 const tickAngle = (180 - (i * 18)) * (Math.PI / 180);
+                // setAngle(tickAngle)
                 const innerRadius = (i % 5 === 0) ? 88 : 85;
                 const outerRadius = 96;
                 return (
@@ -578,10 +609,10 @@ export function OscilloscopeKnob({origin, setOrigin}) {
               })}
 
               <line               
-                x1={100 + Math.cos(260) * 20}
-                y1={100 - Math.sin(260) * 20}
-                x2={100 + Math.cos(260) * 40}
-                y2={100 - Math.sin(260) * 40}
+                x1={100 + Math.cos(currentAngle) * 20}
+                y1={100 - Math.sin(currentAngle) * 20}
+                x2={100 + Math.cos(currentAngle) * 40}
+                y2={100 - Math.sin(currentAngle) * 40}
                 stroke='#CE6E20'
                 strokeWidth={8}
               />

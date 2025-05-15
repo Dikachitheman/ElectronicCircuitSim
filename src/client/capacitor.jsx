@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Capacitor", xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint, setSecondClick}) => {
+export const Capacitor = ({id=null, val, thisSelected, setThisSelected, simulation, type="Capacitor", xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint, setSecondClick}) => {
   const [pointA, setPointA] = useState({ x: xA, y: yA });
   const [pointB, setPointB] = useState({ x: xB, y: yB });
 
@@ -187,6 +187,7 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
 
   return (
     <>
+      <style>{createDashAnimation(-200)}</style>
         <defs>
           <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#4299e1" stopOpacity="0.3" />
@@ -201,22 +202,38 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
             fill="none"
             // stroke="url(#wireGradient)"
             // onClick={()=>setThisSelected(id)} STOPPED WORKING
-            className={` ${ thisSelected === id ? ("stroke-yellow-400/0") : ("stroke-white/0")}`}
+            className={` ${ thisSelected === id || thisSelected === "all" ? ("stroke-yellow-400/0") : ("stroke-white/0")}`}
             strokeWidth="6"
             onMouseDown={() => setThisSelected(id)}
           />
         )}
 
         {(xA !== null && yA !== null && xB !== null && yB !== null) && (
-          <path
-            d={path}
-            fill="none"
-            // stroke="url(#wireGradient)"
-            // onClick={()=>setThisSelected(id)} STOPPED WORKING
-            className={` ${ thisSelected === id ? ("stroke-orange-400") : ("stroke-blue-500")}`}
-            strokeWidth="1"
-            onMouseDown={() => setThisSelected(id)}
-          />
+          <>
+            <path
+              d={path}
+              fill="none"
+              // stroke="url(#wireGradient)"
+              // onClick={()=>setThisSelected(id)} STOPPED WORKING
+              className={` ${ thisSelected === id || thisSelected === "all" ? ("stroke-red-500") : ("stroke-blue-500")} ${simulation ? "opacity-20" : "opacity-100"}`}
+              strokeWidth={`${simulation ? "2" : "1"}`}
+              onMouseDown={() => setThisSelected(id)}
+            />
+
+            <path
+              onClick={()=>setThisSelected(id)}
+              d={path}
+              className={` ${ thisSelected === id || thisSelected === "all" ? ("stroke-yellow-400") : ("stroke-blue-400")}  ${simulation ? "opacity-100" : "opacity-0"}`}
+              fill="none"
+              strokeWidth="1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                strokeDasharray: '6 10',
+                animation: 'capa 10s linear infinite'
+              }}
+            />
+          </>
         )}
 
         <text x={(xA + xB + 40) / 2} y={(yA + yB + 40) / 2} className="text">id {id} val {val}</text>
@@ -261,3 +278,11 @@ export const Capacitor = ({id=null, val, thisSelected, setThisSelected, type="Ca
     </>
   );
 };
+
+const createDashAnimation = (offset) => `
+  @keyframes capa {
+    to {
+      stroke-dashoffset: ${offset};
+    }
+  }
+`;

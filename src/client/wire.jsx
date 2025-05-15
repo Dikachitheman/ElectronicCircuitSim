@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint}) => {
+const StepWireA = ({id=null, val, thisSelected, setThisSelected, simulation, xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint}) => {
   const [points, setPoints] = useState({
     start: { x: null, y: null },
     middle: { x: null },
@@ -106,12 +106,13 @@ const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=nul
 
   return (
     <>
+    <style>{createDashAnimation(-200)}</style>
       {/* Base wire */}
       {(xA !== null && yA !== null && xB !== null && yB !== null) && (
         <>
           <path
             d={calculatePath()}
-            onClick={()=>setThisSelected(id)}
+            onMouseDown={()=>setThisSelected(id)}
             className={`opacity-0 stroke-white`}
             fill="none"
             strokeWidth="6"
@@ -121,19 +122,19 @@ const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=nul
 
           <path
             d={calculatePath()}
-            onClick={()=>setThisSelected(id)}
-            className={` ${ thisSelected === id ? ("stroke-red-500") : ("stroke-blue-500")} opacity-20`}
+            onMouseDown={()=>setThisSelected(id)}
+            className={` ${ thisSelected === id || thisSelected === "all" ? ("stroke-red-500") : ("stroke-blue-500")} ${simulation ? "opacity-20" : "opacity-100"}`}
             fill="none"
-            strokeWidth="2"
+            strokeWidth={`${simulation ? "2" : "1"}`}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
           
           <path
             ref={pathRef}
-            onClick={()=>setThisSelected(id)}
+            onMouseDown={()=>setThisSelected(id)}
             d={calculatePath()}
-            className={` ${ thisSelected === id ? ("stroke-yellow-400") : ("stroke-blue-400")}`}
+            className={` ${ thisSelected === id || thisSelected === "all" ? ("stroke-yellow-400") : ("stroke-blue-400")}  ${simulation ? "opacity-100" : "opacity-0"}`}
             fill="none"
             strokeWidth="1"
             strokeLinecap="round"
@@ -234,3 +235,11 @@ const StepWireA = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=nul
 };
 
 export default StepWireA;
+
+const createDashAnimation = (offset) => `
+  @keyframes dash {
+    to {
+      stroke-dashoffset: ${offset};
+    }
+  }
+`;

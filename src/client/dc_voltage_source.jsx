@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, type="VoltageSource", xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint}) => {
+export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, simulation, type="VoltageSource", xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint}) => {
   const [pointA, setPointA] = useState({ x: xA, y: yA });
   const [pointB, setPointB] = useState({ x: xB, y: yB });
 
@@ -213,20 +213,39 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
           </linearGradient>
         </defs> */}
 
+        <style>{createDashAnimation(-200)}</style>
         {(xA !== null && yA !== null && xB !== null && yB !== null) && (
           <>
             <path
+              onMouseDown={()=>setThisSelected(id)}
               d={path.mainPath}
               fill="none"
-              stroke="url(#wireGradient)"
-              strokeWidth="1"
+              // stroke="url(#wireGradient)"
+              className={` ${ thisSelected === id || thisSelected === "all" ? ("stroke-red-500") : ("stroke-blue-500")} ${simulation ? "opacity-20" : "opacity-100"}`}
+              strokeWidth={`${simulation ? "2" : "1"}`}
             />
+            
+            <path
+              onMouseDown={()=>setThisSelected(id)}
+              d={path.mainPath}
+              className={` ${ thisSelected === id || thisSelected === "all" ? ("stroke-yellow-400") : ("stroke-blue-400")} ${simulation ? "opacity-100" : "opacity-0"}`}
+              fill="none"
+              strokeWidth="1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                strokeDasharray: '6 10',
+                animation: 'dcvolt 10s linear infinite'
+              }}
+            />
+
             <circle
               cx={path.circle.cx}
               cy={path.circle.cy}
               r={path.circle.r}
               fill="none"
-              stroke="url(#wireGradient)"
+              // stroke="url(#wireGradient)"
+              className={` ${ thisSelected === id || thisSelected === "all" ? ("stroke-yellow-400") : ("stroke-blue-400")}`}
               strokeWidth="1"
             />
             {/* Plus symbol */}
@@ -299,3 +318,11 @@ export const DCVoltageSource = ({id=null, val, thisSelected, setThisSelected, ty
     </>
   );
 };
+
+const createDashAnimation = (offset) => `
+  @keyframes dcvolt {
+    to {
+      stroke-dashoffset: ${offset};
+    }
+  }
+`;

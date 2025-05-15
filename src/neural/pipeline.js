@@ -78,16 +78,20 @@ class Channel {
         }
     }
 
-    async process() {
+    process() {
+        let a = []
         for(let node of this.nodes) {
-            await node.run()
+            // await node.run()
+            a.push({key: node.execute, args: node.args})
         }
+
+        return a
     }
 
     async run() {
         let currentNode = this.start
         while(currentNode) {
-            await currentNode.run()
+            // await currentNode.run()
             this.nodes.push(currentNode)
             currentNode = currentNode.tail
         }
@@ -126,19 +130,34 @@ export class Pipeline {
         return channel;
     }
 
+    
     async run() {
         if (this.channels.length === 0) {
             throw new Error('No channels in pipeline');
         }
 
+        let b=[]
         for (let ch of this.channels) {
             await ch.run()
+            b.push( ch.process())
         }
         // console.log("ctx", this.contextManager)
         this.contextManager.clear()
+
+        console.log(b)
+        return b
+    }
+}
+
+export const Execute = (pipeline, funcMap) => {
+    for(let ar=0; ar<pipeline.length; ar++) {
+        for (let p = 0; p<pipeline[ar].length; p++) {
+            funcMap[pipeline[ar][p].key]({ctx: pipeline[ar][p].args.ctx, input: pipeline[ar][p].args.input, id: pipeline[ar][p].args.id})
+        }
     }
 }
 
 // const pipeline = new Pipeline();
 // pipeline.compose(['fetchData', 'processData', 'saveData', 'test']);
 // pipeline.run()
+

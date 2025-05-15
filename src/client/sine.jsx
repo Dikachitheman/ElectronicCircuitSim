@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { CapacitorIcon } from '../assets/svgIcon';
 import CanvasSLider, { OscilloscopeKnob, StepSlider } from './slider';
 import { v4 as uuidv4 } from 'uuid';
+import { FlipHorizontal, GripHorizontal } from 'lucide-react';
+import { IconMap } from '../assets/svgIcon'; 
 
-export default function Sine({pvr}) { // RECALL: use this instead pvr2
+export default function Sine({pvr, trigger}) { // RECALL: use this instead pvr2
   const [isActive, setIsActive] = useState(true);
   const [current, setCurrent] = useState(null);
   const [pvr2, setPVR] = useState(null)
-  const [all, setAll] = useState(true)
+  const [all, setAll] = useState(false)
 
   useEffect(() => {
     // Assuming your array is stored in a variable called 'data'
@@ -62,29 +64,32 @@ useEffect(() => {
 }, [all])
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex relative flex-col items-center gap-2 w-[1050px]">
       <div className='flex'>
         <button
           onClick={() => setIsActive((prev) => !prev)}
-          className="px-4 py-2 bg-[#b0ff06] font-semibold text-[#05250e] rounded-[24px] mr-2 shadow"
+          className="px-4 py-2 bg-[#b0ff06] hover:bg-[#d3ff24] font-semibold text-[#05250e] rounded-[24px] mr-2 shadow"
         >
           {isActive ? "Stop Oscilloscope" : "Start Oscilloscope"}
         </button>
         <div className='flex text-white space-x-1'>
-          <div onClick={() => handleAll()} className={`rounded-[12px] text-black border border-[#d5d5d5] px-[14px] flex items-center ${all ? "bg-white/80" : "bg-white/50"} backdrop-blur-[12px]`}>All</div>
+          <div onClick={() => handleAll()} className={`rounded-[12px] text-black border border-[#d5d5d5] hover:border-[#fff] hover:bg-[#b2b2b2] px-[14px] flex items-center ${all ? "bg-white/80" : "bg-white/50"} backdrop-blur-[12px]`}>All</div>
           {pvr2 && pvr2.map((item, index) => (
-            <div key={index} onClick={() => handleClick(item)} className={`rounded-[12px] text-black border border-[#d5d5d5] px-[14px] flex items-center ${current === item ? "bg-white/80" : "bg-white/50"} backdrop-blur-[12px]`}>
+            <div key={index} onClick={() => handleClick(item)} className={`rounded-[12px] text-black border border-[#d5d5d5] hover:border-[#fff] hover:bg-[#b2b2b2] px-[14px] flex items-center ${current === item ? "bg-white/80" : "bg-white/50"} backdrop-blur-[12px]`}>
               <div className='mr-[8px]'>
                 {item.comp}
               </div>
               <div className='mr-[12px]'>
                 {item.type}
               </div>
-              <div>
-                <CapacitorIcon />
+              <div className='h-[24px] w-[24px] flex items-center justify-center'>
+                {IconMap[item.type]}
               </div>
             </div>
           ))}
+          <button className='absolute right-8 opacity-45 hover:opacity-100 ease-out' onMouseDown={trigger}>
+            <GripHorizontal size={34} />
+          </button>
         </div>
       </div>
       <div className=''>
@@ -97,7 +102,7 @@ useEffect(() => {
 function SineWave({current, all, scopeList}) {
   const canvasRef = useRef(null);
   const [state, setState] = useState(null);
-  const [sliderVal, setSliderVal] = useState(100)
+  const [sliderVal, setSliderVal] = useState(0)
   const [stepSliderVal, setStepSliderVal] = useState(8)
   const [liveOrDead, setLiveOrDead] = useState("live")
   const [vmax, setVmax] = useState(() => current?.vmax || null);
@@ -109,7 +114,10 @@ function SineWave({current, all, scopeList}) {
   const animationRef = useRef(null);
   const [active, setActive] = useState("v")
   const stateRef = useRef(null)
-
+  const [comp, setComp] = useState(null)
+  const [id, setId] = useState(null)
+  const [t, setT] = useState(60)
+  
   let isAmplitude = false
   let phaseOffset = 0
   let x = 0;
@@ -134,7 +142,7 @@ function SineWave({current, all, scopeList}) {
   };
 
   const drawGrid = (ctx, canvas) => {
-    for (let i = 0; i < 6; i++) {
+    for (let i = 1; i < 6; i++) {
       const x = i * 120;
       
       ctx.beginPath();
@@ -146,7 +154,7 @@ function SineWave({current, all, scopeList}) {
     }
     
     // Draw horizontal lines
-    for (let i = 0; i < 4; i++) {
+    for (let i = 1; i < 4; i++) {
       const y = i * 70;
       
       ctx.beginPath();
@@ -158,16 +166,100 @@ function SineWave({current, all, scopeList}) {
     }
   }
 
+  // useEffect(() => {
+  //   const canvas = canvasRef.current;
+  //   const ctx = canvas.getContext('2d');
+    
+  //   let wasAmplitude = false
+  //   let endX = 680;
+  //   let currentPhase = -680;
+  //   let endXPhase = 0;
+  //   let endXSine = endX;
+  //   let sinePhase = null;
+  //   let phaseShift = 0.1;
+
+  //   drawGrid(ctx, canvas)
+    
+  //   const animate = () => {
+  //     // Clear the entire canvas
+  //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+  //     drawGrid(ctx, canvas)
+  //     let yOrigin = (canvas.height * origin) / 100
+
+  //     ctx.beginPath();
+  //     ctx.strokeStyle = "#a7ff0f";
+  //     ctx.lineWidth = 2;
+
+  //     for (let x = 0; x <= endX; x += 1) {
+        
+  //       y = charge(x, currentPhase, canvas, vmax, origin)
+  //       if (y < yOrigin) {
+  //         if (x === 0) {
+  //           ctx.moveTo(x, y);
+  //         } else {
+  //           ctx.lineTo(x, y);
+  //         }
+  //       }
+
+  //       let diff = Math.abs(yOrigin - vmax - y)
+
+  //       if (diff < 2) {
+  //         isAmplitude = true
+  //       }
+
+  //       ctx.stroke();
+  //     }
+
+  //     if (isAmplitude) {
+
+  //       endXPhase = endXPhase + phaseShift
+  //       endX -= 0.1
+
+  //       let w = 0.06
+
+  //       if (!wasAmplitude) {
+  //         sinePhase = Math.asin((y - yOrigin) / vmax) / w;
+  //         wasAmplitude = true
+  //       }
+
+  //       for (let x = endX; x <= endXSine; x += 1  ) {
+
+  //         y = yOrigin - vmax * Math.sin((w * x) + (currentPhase * w) + (sinePhase));
+  //         if (x === endX) {  // EXPERIMENT LATER: use y < canvas height / 2 for different effect
+  //           ctx.moveTo(x, y);
+  //         } else {
+  //           ctx.lineTo(x, y);
+  //         }
+  //       }
+  //       ctx.stroke();
+  //     }
+      
+  //     currentPhase += phaseShift;
+      
+  //     animationRef.current = requestAnimationFrame(animate);
+  //   };
+    
+  //   if (state === 'start') {
+  //     handleLiveOrDead()
+  //     animationRef.current = requestAnimationFrame(animate);
+  //   }
+    
+  //   // Cleanup function
+  //   return () => {
+  //     if (animationRef.current) {
+  //       cancelAnimationFrame(animationRef.current);
+  //     }
+  //   };
+  // }, [state]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
-    let wasAmplitude = false
     let endX = 680;
     let currentPhase = -680;
-    let endXPhase = 0;
     let endXSine = endX;
-    let sinePhase = null;
     let phaseShift = 0.1;
 
     drawGrid(ctx, canvas)
@@ -183,51 +275,21 @@ function SineWave({current, all, scopeList}) {
       ctx.strokeStyle = "#a7ff0f";
       ctx.lineWidth = 2;
 
-      for (let x = 0; x <= endX; x += 1) {
-        
-        y = charge(x, currentPhase, canvas, vmax, origin)
-        if (y < yOrigin) {
-          if (x === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
+      endX -= 0.1
+
+      let w = 0.06
+
+      for (let x = endX; x <= endXSine; x += 1  ) {
+
+        y = yOrigin - vmax * Math.sin((w * x - (endX * w)));
+        if (x === endX) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
         }
 
-        let diff = Math.abs(yOrigin - vmax - y)
-
-        if (diff < 2) {
-          isAmplitude = true
-        }
-
-        ctx.stroke();
       }
-
-      if (isAmplitude) {
-
-        endXPhase = endXPhase + phaseShift
-        endX -= 0.1
-
-        let w = 0.06
-
-        if (!wasAmplitude) {
-          sinePhase = Math.asin((y - yOrigin) / vmax) / w;
-          wasAmplitude = true
-        }
-
-        for (let x = endX; x <= endXSine; x += 1  ) {
-
-          y = yOrigin - vmax * Math.sin((w * x) + (currentPhase * w) + (sinePhase));
-          if (x === endX) {  // EXPERIMENT LATER: use y < canvas height / 2 for different effect
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
-        }
-        ctx.stroke();
-      }
-      
-      currentPhase += phaseShift;
+      ctx.stroke();
       
       animationRef.current = requestAnimationFrame(animate);
     };
@@ -388,19 +450,14 @@ function SineWave({current, all, scopeList}) {
 
     ctx.beginPath();
     ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 2;
-    
-    ctx.beginPath()
-
-    ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 12;
 
     console.log(endXPhase + currentPhase, endXPhase, currentPhase)
 
-    for (let x = 0; x <= endX; x += 1  ) {
+    for (let x = (Math.abs(currentPhase)); x <= endX; x += 1  ) {
 
       // Apply phase shift to the sine calculation
-      y = canvas.height/2 - yOrigin - vMax * Math.sin((w * (x + currentPhase)) + (currentPhase * w) + (sinePhase * w));
+      y = canvas.height/2 - yOrigin - vMax * Math.sin((w * (x - (Math.abs(currentPhase)))));
       if (x === endX) { 
         ctx.moveTo(x, y);
       } else  {
@@ -438,7 +495,7 @@ function SineWave({current, all, scopeList}) {
 
     let currentPhase = (((100 - sliderVal) * endX) / 100) * -1
 
-    if ( sliderVal < 100) {
+    if ( sliderVal < 100 && sliderVal > 0) {
 
       setLiveOrDead("dead")
 
@@ -456,12 +513,17 @@ function SineWave({current, all, scopeList}) {
       setLiveOrDead("live")
     }
 
+    let updatedT = (sliderVal * 60) / 100
+    setT(updatedT)
+
   }, [sliderVal, vmax, allVmax, origin, w])
 
   useEffect(() => {
 
     if (current) {
       setVmax(current?.vmax)
+      setId(current?.comp < 10 ? `0${current?.comp}` : current?.comp)
+      setComp(current?.type)
       setVmaxInit(current?.vmax)
     } 
     if (scopeList) {
@@ -485,20 +547,20 @@ function SineWave({current, all, scopeList}) {
 
           <div className='flex items-end text-[#F4F4F4] px-[8px] mt-[18px]'>
             <div className='flex w-full items-center space-x-[4px]'>
-              <p>48s</p>
+              <p>{`${t}s`}</p>
               <p className='text-[#559AFF] text-[14px]'>{state === 'start' ? "Charging/Oscillating" : state === 'end' ? "Discharging" : "Ready"}</p>
             </div>
             <div className='text-[12px] leading-3'>
-              <p className='text-[16px] text-[#FF541F]'>0c14</p>
-              <p>Resistor</p>
+              <p className='text-[16px] text-[#FF541F]'>{`0c${id}`}</p>
+              <p>{comp}</p>
             </div>
           </div>
           <div className='mt-[8px] pb-[8px]'>
             {
               active === "v" ? (
-                <StepSlider key={() => uuidv4()} state={stepSliderVal} active={active} w={w} setw={setw} vmaxInit={vmaxInit} allVmaxInit={allVmaxInit} setAllVmax={setAllVmax} setVmax={setVmax}  />
+                <StepSlider key={"1"} state={stepSliderVal} active={active} w={w} setw={setw} vmaxInit={vmaxInit} allVmaxInit={allVmaxInit} setAllVmax={setAllVmax} setVmax={setVmax}  />
               ) : (
-                <StepSlider key={() => uuidv4()} state={stepSliderVal} active={active} w={w} setw={setw} vmaxInit={vmaxInit} allVmaxInit={allVmaxInit} setAllVmax={setAllVmax} setVmax={setVmax}  />
+                <StepSlider key={"2"} state={stepSliderVal} active={active} w={w} setw={setw} vmaxInit={vmaxInit} allVmaxInit={allVmaxInit} setAllVmax={setAllVmax} setVmax={setVmax}  />
               )
             }
           </div>
@@ -536,7 +598,7 @@ function SineWave({current, all, scopeList}) {
       <div className="ml-[2px] flex w-fulljustify-center items-center bg-black backdrop-blur-lg rounded-lg mr-[12px] overflow-hidden">
         <div className="absolute bg-gradient-to-br from-slate-300/20 via-slate-100/10 to-gray-500/30 mix-blend-overlay"></div>
         <canvas ref={canvasRef} width={700} height={260} />
-        <div className='absolute bottom-[0px] w-full'>
+        <div className='absolute left-10 bottom-[0px] w-full'>
           <CanvasSLider state={sliderVal} setSliderVal={setSliderVal}/>
         </div>
       </div>

@@ -5,24 +5,24 @@ import findCircuitCycles from './engine/loops';
 import { Capacitor } from './client/capacitor';
 import { Inductor } from './client/inductor';
 import { DCVoltageSource } from './client/dc_voltage_source';
-import { CapacitorIcon } from './assets/svgIcon';
 import { Canvas } from './client/canvas';
 import Sine from './client/sine';
 import { analyzeCircuit } from './engine/nodalv2';
 import { Discrete } from './engine/formatMatrix';
 import { gaussian } from './engine/gaussian';
 import { HistoryClass, HistoryManager } from './client/utils/history';
-import { Pipeline } from './neural/pipeline';
+import { Execute, Pipeline } from './neural/pipeline';
 import { ComponentSlider, Draggable, PanSlider } from './client/slider';
 import { IrisAI } from './client/toggle';
-import { ArrowDown, ArrowDown10, ArrowDownAZ, ArrowDownSquare, ArrowDownToLine, BookOpen, Hand, Home, Play, Redo, Redo2, Save, SaveAll, Undo2, ZoomIn } from 'lucide-react';
+import { ArrowDownToLine, BookOpen, Check, CircleAlert, CircleDashed, Hand, Home, Minus, Play, Plus, Redo, Redo2, Save, SaveAll, Sparkle, SunSnow, Undo2, WandSparkles, ZoomIn } from 'lucide-react';
+import { CapacitorIcon, IconMap } from './assets/svgIcon';
 
 export const Render = () => {
 
   const svgRef = useRef(null);
   const svgPanRef = useRef(null);
-  const [file, setFile] = useState("Operational Amplifier")
-  const [folder, setFolder] = useState("RLC")
+  const [file, setFile] = useState("Untitled File")
+  const [folder, setFolder] = useState("New Folder")
   const [editingFolder, setEditingFolder] = useState(false);
   const [editingFile, setEditingFile] = useState(false);
   const [tempFolder, setTempFolder] = useState("");
@@ -37,8 +37,8 @@ export const Render = () => {
   const [recentlyUsedTools, setRecentlyUsedTools] = useState([])
   const [selectionInstance, setSelectionInstance] = useState({})
   const [thisSelected, setThisSelected] = useState(null)
-  const [isVertical, setIsVertical] = useState('none')
-  const [change, setChange] = useState(false)
+  const [isVertical, setIsVertical] = useState('h')
+  const [simulation, setSimulation] = useState(false)
   const [isOpen, setIsOpen] = useState(false);
   const [isExisting, setIsExisting] = useState(true)
   const [open, setOpen] = useState(null)
@@ -59,9 +59,11 @@ export const Render = () => {
   const [filteredSelection, setFilteredSelection] = useState([])
   const [canvasClick, setCanvasClick] = useState(null)
   const [zoomVal, setZoomVal] = useState(96)  
-  const [rectPosition, setRectPosition] = useState({ x: 150, y: 120 });
+  const [rectPosition, setRectPosition] = useState({ x: 100, y: 120 });
   const [panisDragging, setpanIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [magicComp, setMagicComp] = useState(null)
+  const [optionOpen, setOptionOpen] = useState(false)
   const [viewBox, setViewBox] = useState({
     x: 0,
     y: 0,
@@ -69,11 +71,20 @@ export const Render = () => {
     height: 540
   });
 
+  const [viewScope, setViewScope] = useState(false)
+  const [navigator, setNavigator] = useState(true)
+  const [magicPen, setMagicPen] = useState(true)
+  const [irisAI, setIrisAI] = useState(true)
+
   const [store, setStore] = useState(null)
 
   const manager = HistoryManager.getInstance(selection);
 
   useEffect(() => {
+
+    if (!simulation) {
+      return
+    }
 
     const findJunctionsPromise = new Promise((resolve) => {
       const junctions = findJunctions(filteredSelection);
@@ -142,7 +153,17 @@ export const Render = () => {
         setSelection(updatedSelection);
       })
 
-  }, [change]);
+  }, [simulation]);
+
+  const handleRun = () => {
+    setSimulation(!simulation)
+
+    setThisSelected("all")
+
+    setTimeout(() => {
+      setThisSelected(null)
+    }, 1000);
+  }
 
   const parseVoltage = (val) => {
     const numericValue = parseFloat(val);
@@ -380,7 +401,7 @@ export const Render = () => {
         setExistingPoint(null)
 
       } else {
-        setCanvasClick({x: coords.x, y: coords.y})
+        // setCanvasClick({x: coords.x, y: coords.y})  // prevent green circle
         selectionInstance.coords.xA = existingPoint.x
         selectionInstance.coords.yA = existingPoint.y
         setSelection([...selection, selectionInstance])
@@ -411,11 +432,11 @@ export const Render = () => {
     
     const vert = selection[id - 1]['orientation']
     const componentMap = {
-      StepWire: <StepWireA id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint} setSecondClick={setSecondClick} />,
-      Capacitor: <Capacitor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint} setSecondClick={setSecondClick}/>,
-      Inductor: <Inductor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint} setSecondClick={setSecondClick}/>,
-      Resistor: <Resistor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint} setSecondClick={setSecondClick}/>,
-      DCVoltageSource: <DCVoltageSource id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} svgRef={svgRef} setExistingPoint={setExistingPoint} setSecondClick={setSecondClick}/>,
+      StepWire: <StepWireA id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} simulation={simulation} svgRef={svgRef} setExistingPoint={setExistingPoint} setSecondClick={setSecondClick} />,
+      Capacitor: <Capacitor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} simulation={simulation} svgRef={svgRef} setExistingPoint={setExistingPoint} setSecondClick={setSecondClick}/>,
+      Inductor: <Inductor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} simulation={simulation} svgRef={svgRef} setExistingPoint={setExistingPoint} setSecondClick={setSecondClick}/>,
+      Resistor: <Resistor id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} simulation={simulation} svgRef={svgRef} setExistingPoint={setExistingPoint} setSecondClick={setSecondClick}/>,
+      DCVoltageSource: <DCVoltageSource id={id} val={val} xA={xA} xB={xB && vert === 'v' ? xA : xB} yA={yA} yB={yB && vert === 'h' ? yA : yB } thisSelected={thisSelected} setThisSelected={setThisSelected} simulation={simulation} svgRef={svgRef} setExistingPoint={setExistingPoint} setSecondClick={setSecondClick}/>,
       // Add more component types here
     };
   
@@ -619,7 +640,7 @@ export const Render = () => {
   useEffect(() => {
 
     if (activateTool === true && drawCoords) {
-      let comp = "Capacitor";
+      let comp = magicComp;
       let value = "10uf";
       let xf = drawCoords[0][0] * 6
       let yf = drawCoords[0][1] * 6
@@ -828,6 +849,7 @@ export const Render = () => {
         setHistory([...parsedData]);
         setSelection([...JSON.parse(components)])
         setPrevHistoryId(parseFloat(pHId))
+        setFile(file)
       } else {
         console.log("file doesn't exist")
       }
@@ -975,6 +997,14 @@ export const Render = () => {
     setPrevHistoryId(id)
   }
   
+  useEffect(() => {
+    if (prevHistoryId !== null && !Number.isNaN(prevHistoryId)) {
+      setLiveOrDead("dead")
+    } else {
+      setLiveOrDead("live")
+    }
+  }, [prevHistoryId])
+
   const handleDelete = (itemId, id) => {
 
     let branch = null
@@ -1058,7 +1088,7 @@ export const Render = () => {
 
   // 'saveFile', 'loadFile $Operational Amplifier',
 
-  const handlePipeline = () => {
+  const handlePipeline = async () => {
 
     let head = [
       {id: 23050, input: 'RenderTool $Capacitor $10uf $800 $200 $400 $300 $none'}, 
@@ -1076,10 +1106,10 @@ export const Render = () => {
     ]
 
     pipeline.compose(head)
-    // pipeline.compose(chain)
+    pipeline.compose(chain)
 
-    pipeline.run()
-
+    let res = await pipeline.run()
+    Execute(res, funcMap)
   }
   
   // Handle start of dragging inside the RECT
@@ -1150,18 +1180,18 @@ export const Render = () => {
   return (
     <div className="w-full h-screen relative cursor-default">
 
-      <div className='absolute top-[150px] w-screen'>
-        <Canvas setViewBox={setViewBox} isDragging={isDragging} setDrawCoords={setDrawCoords} setActivateTool={setActivateTool}/>
+      <div className={`absolute top-[150px] w-screen`}>
+        <Canvas view={magicPen} setViewBox={setViewBox} isDragging={isDragging} setDrawCoords={setDrawCoords} setActivateTool={setActivateTool} setMagicComp={setMagicComp}/>
       </div>
 
-      <div className='absolute w-[100%]'>
+      <div className={`absolute w-[100%] ${!viewScope && ("hidden")}`}>
         <Draggable initialPosition={{ x: 440, y: 620 }} scale={1}>
           <Sine pvr={scopeList}/>
         </Draggable>
       </div>
 
-      <div className='absolute' style={{ transform: 'scale(1)', transformOrigin: 'top left' }} >
-        <Draggable initialPosition={{ x: 840, y: 140 }} scale={1}>
+      <div className={`absolute ${!irisAI && ("hidden")}`}>
+        <Draggable initialPosition={{ x: 810, y: 140 }} scale={1}>
           <IrisAI enter={() => handlePipeline()}/>
         </Draggable>
       </div>
@@ -1184,7 +1214,7 @@ export const Render = () => {
                       onChange={(e) => setTempFolder(e.target.value)}
                       onKeyDown={(e) => handleKeyDown(e, saveFolderChange)}
                       autoFocus
-                      className="ml-2 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-[#9cff19] outline-none"
+                      className="ml-2 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-[#e3ff12] outline-none"
                     />
                     <button
                       onClick={saveFolderChange}
@@ -1247,14 +1277,14 @@ export const Render = () => {
             <div className='hover:bg-[#3a3850] rounded-[24px] py-[4px] px-[12px] flex'>
               <div><Home fill='white'/></div><p className=''>Home</p>
             </div>
-            <div className='hover:bg-[#3a3850] rounded-[24px] py-[4px] px-[12px] flex text-white/60'>
+            <div onClick={() => setOptionOpen(!optionOpen)} className='hover:bg-[#3a3850] rounded-[24px] py-[4px] px-[12px] flex text-white/60'>
               <div><ArrowDownToLine /></div><p className=''>Options</p>
             </div>
             <div className='hover:bg-[#3a3850] rounded-[24px] py-[4px] px-[12px] flex text-white/60'>
               <div><Save/></div><p className='' onClick={() => save(file)}>Save</p>
             </div>
-            <div className='hover:bg-[#3a3850] rounded-[24px] py-[4px] px-[12px] flex text-white/60'>
-              <div><BookOpen/></div><p className='' onClick={() => handleFileList()}>Load</p>
+            <div onClick={() => handleFileList()} className='hover:bg-[#3a3850] rounded-[24px] py-[4px] px-[12px] flex text-white/60'>
+              <div><BookOpen/></div><p className=''>Load</p>
             </div>
 
           {
@@ -1274,11 +1304,65 @@ export const Render = () => {
           }
           </div>
 
+          {
+            optionOpen && (
+              <div className="absolute left-[140px] top-[49px] w-48 bg-white border border-gray-300 shadow-lg rounded-lg p-2 text-black">
+                <button
+                  onClick={() => setViewScope(!viewScope)}
+                  className={`justify-between flex w-full text-left px-4 py-1 mt-1 rounded-[44px] hover:bg-black/50 hover:text-white`}
+                >
+                  <p>Oscilloscope</p>
+                  {
+                    viewScope && (
+                      <div className='flex justify-center items-center h-[22px] w-[22px] rounded-full bg-green-600'><Check color='white'/></div>
+                    )
+                  }
+                </button>
+
+                <button
+                  onClick={() => setNavigator(!navigator)}
+                  className={`justify-between flex w-full text-left px-4 py-1 mt-1 rounded-[44px] hover:bg-black/50 hover:text-white`}
+                >
+                  <p>Navigator</p>
+                  {
+                    navigator && (
+                      <div className='flex justify-center items-center h-[22px] w-[22px] rounded-full bg-green-600'><Check color='white'/></div>
+                    )
+                  }               
+                </button>
+
+                <button
+                  onClick={() => setMagicPen(!magicPen)}
+                  className={`justify-between flex w-full text-left px-4 py-1 mt-1 rounded-[44px] hover:bg-black/50 hover:text-white`}
+                >
+                  <p>Magic Pen</p>
+                  {
+                    magicPen && (
+                      <div className='flex justify-center items-center h-[22px] w-[22px] rounded-full bg-green-600'><Check color='white'/></div>
+                    )
+                  }                
+                </button>
+
+                <button
+                  onClick={() => setIrisAI(!irisAI)}
+                  className={`justify-between flex w-full text-left px-4 py-1 mt-1 rounded-[44px] hover:bg-black/50 hover:text-white`}
+                >
+                  <p>Iris AI</p>
+                  {
+                    irisAI && (
+                      <div className='flex justify-center items-center h-[22px] w-[22px] rounded-full bg-green-600'><Check color='white'/></div>
+                    )
+                  }                
+                </button>
+              </div>
+            )
+          }
+
           <div className="relative ml-[64px]">
             {/* Dropdown Toggle Button */}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="px-[24px] py-[4px] bg-[#08143e] text-white border border-slate-500 rounded-[44px]"
+              className="px-[24px] py-[4px] bg-[#040c2a] hover:bg-[#08143e] text-white border border-slate-500 rounded-[44px]"
             >
               Select Tools
             </button>
@@ -1353,7 +1437,7 @@ export const Render = () => {
                     onClick={() => handleToolClick(tool.type)}
                     className="flex flex-col items-center group cursor-pointer"
                   >
-                    <div>{tool.icon}</div>
+                    <div className='w-[24px] h-[24px] flex items-center justify-center'>{IconMap[tool.type]}</div>
                     <p className="hidden group-hover:block absolute -bottom-4 whitespace-nowrap bg-white/70 backdrop-blur-lg text-black px-2 py-1 rounded-md text-sm">
                       {tool.type} -- {tool.number}
                     </p>
@@ -1362,15 +1446,15 @@ export const Render = () => {
             </div>
           </div>
 
-          <div className={`flex space-x-[12px] rounded-full p-[6px] text-[#3d0c05] ${isDragging ? "bg-[#00E258]" : "bg-[#FF541F]"}`} onClick={() => setIsDragging(!isDragging)}>
+          <div className={`flex ml-[24px] rounded-full p-[6px] text-[#3d0c05] ${isDragging ? "bg-[#00E258]" : "bg-[#FF541F]"}`} onClick={() => setIsDragging(!isDragging)}>
             <Hand fill={'#FFF'}/>
           </div>
 
           <div className='flex space-x-[14px] mx-[44px]'>
-            <div className='hover:bg-[#0b68cb]' onClick={()=>handleHistorySelect(prevHistoryId, "undo")}>
+            <div className='hover:bg-[#121739]' onClick={()=>handleHistorySelect(prevHistoryId, "undo")}>
               <Undo2 />
             </div>
-            <div className='hover:bg-[#0b68cb]' onClick={()=>handleHistorySelect(prevHistoryId, "undo")}>
+            <div className='hover:bg-[#121739]' onClick={()=>handleHistorySelect(prevHistoryId, "undo")}>
               <Redo2 />
             </div>
             <button onClick={() => handleLiveOrDead()} className={`${liveOrDead === "live" ? ("bg-[#00E258] text-[#003824]") : liveOrDead === "dead" && ("bg-[#ff592b] text-[#300404]")} w-[64px] rounded-[6px]`}>
@@ -1379,7 +1463,6 @@ export const Render = () => {
           </div>
 
           <div className=" flex items-center ml-[8px] text-[#ccc]"> 
-            <p className='mr-[12px]'>Orientation</p>
             <button
               onClick={() => changeOrientation()}
               className={`py-[2px] mr-[34px] w-[104px] rounded-[44px] bg-[#141414] border-white/60 border-[2px] ${
@@ -1392,14 +1475,14 @@ export const Render = () => {
             {/** FLAG: debug */}
             <p className='mr-[12px]'>Run</p>
             <button className='bg-[#15FFAB] font-[600] text-[#04343a] w-[34px] h-[34px] flex items-center justify-center rounded-[100%]' 
-              onClick={() => setChange(!change)}>
+              onClick={() => handleRun()}>
               <Play fill='#013207'/>
             </button>
           </div>
         </div>
       </div>
 
-      <div className=' components-list bg-gradient-to-b from-gray-100/5 via-blue-200/10 to-slate-200/15 backdrop-blur-[64px] border-white/10 rounded-[24px] shadow-lg overflow-hidden border w-[300px] absolute top-[140px] left-[40px]'>
+      <div className=' components-list bg-gradient-to-b from-gray-100/5 via-blue-200/10 to-blue-200/15 backdrop-blur-[64px] border-white/10 rounded-[24px] shadow-lg overflow-hidden border w-[300px] absolute top-[140px] left-[40px]'>
 
         <div className='bg-black/60 pt-[24px] '>
           {/* <div>
@@ -1415,19 +1498,7 @@ export const Render = () => {
             </div>
           </div> */}
 
-          <div className='flex justify-between w-[100%] px-[12px] mb-[12px]'>
-            <div className='border border-[#494949] px-[6px] rounded-[24px] w-fit '>
-              <svg width="60" viewBox="0 0 400 200">
-                <circle cx="100" cy="100" r="30" fill={existingPoint ? "#3498db" : "#e74c3c"} />
-                
-                <line x1="140" y1="100" x2="260" y2="100" stroke="#494949" stroke-width="5" />
-                
-                <circle cx="300" cy="100" r="30" fill={existingPoint ? "#3498db" : "#e74c3c"} />
-              </svg>
-            </div>
 
-            <p onClick={()=>setThisSelected(null)} className='text-[#7c7c7c] border border-[#494949] hover:text-[#202020] hover:bg-[#636363] px-[14px] rounded-[24px] flex items-center'>Clear</p>
-          </div>
 
           <div className='component-or-history flex justify-center'>
             <div className='w-7 border border-b-gray-600 border-t-0 border-l-0 border-r-0'></div>
@@ -1455,7 +1526,15 @@ export const Render = () => {
 
         </div>
 
-        <div className='no-scrollbar h-[700px] pb-[24px] w-full flex pt-[14px]'>
+        <div className='flex justify-end space-x-[14px] w-[100%] px-[14px] pt-[12px]'>
+          <div>
+            <CircleDashed color={existingPoint ? "blue" : "gray"}/>
+          </div>
+
+          <p onClick={()=>setThisSelected(null)} className='text-[#7c7c7c] border border-[#494949] hover:text-[#202020] hover:bg-[#636363] px-[14px] rounded-[24px] flex items-center'>Clear</p>
+        </div>
+
+        <div className='no-scrollbar h-[700px] pb-[24px] w-full flex'>
             <div className='no-scrollbar w-full overflow-scroll'>
               {
                 isExisting ? (
@@ -1477,7 +1556,7 @@ export const Render = () => {
                             <div className=' mb-[30px] pl-[8px]'>
                               <div className='flex space-x-[8px] items-center'>
                                 <p className='text-[22px]' onClick={()=>handleComponentClick(item.id)}>{item.component}</p>
-                                <p><CapacitorIcon /></p>
+                                <p className='h-[24px] w-[24px] flex items-center justify-center'> {IconMap[item.component]} </p>
                               </div>
                               <p className='text-[#FF541F] leading-[12px]'>0xc{item.id}</p>
                             </div>
@@ -1511,14 +1590,13 @@ export const Render = () => {
                                 <p className='text-[12px] text-[#ffba19]'>W</p>
                               </div>
                             </div>
-
                           </div>
                         ) : (
-                          <div onClick={()=>setOpen(item.id)} className={`flex items-center px-[24px] h-[50px] bg-white/10 backdrop-blur-lg border border-white/10 hover:border-white/30 rounded-lg shadow-lg ${ thisSelected === item.id ? ("text-[#ffe121]") : ("text-[#e9e9e9]")}`}>
+                          <div onClick={()=>setOpen(item.id)} className={`flex items-center px-[24px] h-[50px] bg-[#121314]/100 backdrop-blur-lg border border-white/10 hover:border-white/30 rounded-[30px] shadow-lg ${ thisSelected === item.id ? ("text-[#ffe121]") : ("text-[#e9e9e9]")}`}>
                             <p className='mr-[12px]'>{item.value}</p>
                             <p>{item.id}</p>
-                            <div className='grow flex justify-end'>
-                              <CapacitorIcon />
+                            <div className='grow flex justify-end h-[34px]'>
+                              {IconMap[item.component]}
                             </div>
                           </div>
                         )
@@ -1601,7 +1679,7 @@ export const Render = () => {
         }
       </svg>
 
-      <div className=' absolute top-[520px] right-[40px] border-[#848484] border bg-[#232323] pt-[12px] px-[14px] rounded-[28px]'>
+      <div className={`absolute top-[520px] right-[40px] border-[#848484] border bg-[#232323] pt-[12px] px-[14px] rounded-[28px] ${!navigator && ("hidden")}`}>
         <svg 
           ref={svgPanRef}
           onClick={handleSvgClick}
@@ -1643,7 +1721,7 @@ export const Render = () => {
           <rect
             x={rectPosition.x}
             y={rectPosition.y}
-            width={300}
+            width={380}
             height={210}
             stroke="#DD6400"
             strokeWidth={2}
@@ -1658,29 +1736,24 @@ export const Render = () => {
         </svg>
 
         <div className='w-full flex justify-between'>
-          <div>
-            min
+          <div className='flex items-center'>
+            <Plus color={"gray"} />
           </div>
           <div className='w-[70%] h-[60px] '>
             <PanSlider state={zoomVal} setViewBox={setViewBox}/>
           </div>
-          <div>
-            plus
+          <div className='flex items-center'>
+            <Minus color={"gray"}  />
           </div>
         </div>
       </div>
       
       <style>
         {`
-          @keyframes dash {
-            to {
-              stroke-dashoffset: -200;
-            }
-          }
-
           .text {
-            font: italic 8px serif;
+            font: italic 6px serif;
             fill: white;
+            opacity: 60%
           }
 
           .no-scrollbar::-webkit-scrollbar {
@@ -1689,6 +1762,7 @@ export const Render = () => {
 
         `}
         </style>
+        
     </div>
     
   );

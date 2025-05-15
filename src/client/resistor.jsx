@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 
 
-export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint, setSecondClick}) => {
+export const Resistor = ({id=null, val, thisSelected, setThisSelected, simulation, xA=null, xB=null, yA=null, yB=null, svgRef, setExistingPoint, setSecondClick}) => {
   const [pointA, setPointA] = useState({ x: xA, y: yA });
   const [pointB, setPointB] = useState({ x: xB, y: yB });
 
@@ -91,7 +91,7 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
     
   return (
     <>
-
+        <style>{createDashAnimation(80)}</style>
         <defs>
           <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#4299e1" stopOpacity="0.3" />
@@ -108,12 +108,11 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
                 fill="none"
                 onClick={()=>handleClick()} STOPPED WORKING
                 // stroke="url(#wireGradient)"
-                className={` ${ thisSelected === id ? ("stroke-yellow-400/0") : ("stroke-blue-500/0")}`}
+                className={` ${ thisSelected === id || thisSelected === "all" ? ("stroke-yellow-400/0") : ("stroke-blue-500/0")}`}
                 strokeWidth="6"
                 onMouseDown={() => handleClick()}
               />
 
-              <text x={(xA + xB + 40) / 2} y={(yA + yB + 40) / 2} className="text">id {id}, val {val}</text>
             </>
           )
         }
@@ -126,16 +125,31 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
               fill="none"
               // onClick={()=>handleClick()} STOPPED WORKING
               // stroke="url(#wireGradient)"
-              className={` ${ thisSelected === id ? ("stroke-yellow-400") : ("stroke-blue-500")}`}
-              strokeWidth="1"
+              className={` ${ thisSelected === id || thisSelected === "all" ? ("stroke-red-500") : ("stroke-blue-500")} ${simulation ? "opacity-20" : "opacity-100"}`}
+              strokeWidth={`${simulation ? "2" : "1"}`}
               onMouseDown={() => handleClick()}
             />
 
-            <text x={(xA + xB + 40) / 2} y={(yA + yB + 40) / 2} className="text">id {id}, val {val}</text>
+            <path
+              onClick={()=>setThisSelected(id)}
+              d={pathD}
+              className={` ${ thisSelected === id || thisSelected === "all" ? ("stroke-yellow-400") : ("stroke-blue-400")}  ${simulation ? "opacity-100" : "opacity-0"}`}
+              fill="none"
+              strokeWidth="1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                strokeDasharray: '6 10',
+                animation: 'resi 10s linear infinite'
+              }}
+            />
+
+            <text x={(xA + xB + 20) / 2} y={(yA + yB + 20) / 2} className="text">0x{id}, val {val}</text>
 
             </>
           )
         }
+        
 
         
         {
@@ -186,3 +200,11 @@ export const Resistor = ({id=null, val, thisSelected, setThisSelected, xA=null, 
      </>
   );
 };
+
+const createDashAnimation = (offset) => `
+  @keyframes resi {
+    to {
+      stroke-dashoffset: ${offset};
+    }
+  }
+`;

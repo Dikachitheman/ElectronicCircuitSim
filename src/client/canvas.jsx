@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import AnimatedGradientBorder, { ToggleButton } from './toggle';
-import { PenTool, SparkleIcon } from 'lucide-react';
+import { PenTool, SparkleIcon, Wand } from 'lucide-react';
+import { SparkleSVG } from '../assets/svgIcon';
 
-export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool}) => {
+
+export const Canvas = ({view, setViewBox, isDragging, setDrawCoords, setActivateTool, setMagicComp}) => {
     const canvasRef = useRef(null);
     const contextRef = useRef(null);
     const [isPainting, setIsPainting] = useState(false);
@@ -11,6 +13,23 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
     const [dsBuffer, setDsBuffer] = useState(null)
     const [preview, setPreview] = useState(false)
     const [isActive, setIsActive] = useState(false)
+    const [show, setShow] = useState("up")
+    const [inf, setInf] = useState(false)
+    const [loading, setLoading] = useState(false)
+
+    const dummy = [
+        "Capacitor",
+        "Resistor"
+    ]
+
+    useEffect(() => {
+        if (inf) {
+            setMagicComp(dummy[0])
+        } else {
+            setMagicComp(null)
+        }
+    }, [inf])
+
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -60,6 +79,67 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
         }
 
     }, [lineWidth, strokeColor]);
+
+    const enter = () => {
+        console.log("here")
+        
+        setTimeout(() => {
+            setLoading(false)
+            setInf(false)
+        }, 400);
+        Promise.resolve()
+            .then(() => {
+                setActivateTool(true)
+            })
+                .then(() => {
+                    clearCanvas()
+                })
+    }
+
+
+    const handleKeyDown = (event) => {
+        if (inf === true) {
+            if (event.key === "ArrowUp") {
+                setShow("up");
+                const component = dummy[0];
+                setMagicComp(component);
+            } else if (event.key === "ArrowDown") {
+                setShow("down");
+                const component = dummy[1];
+                setMagicComp(component);
+            } else if (event.key === "Enter") {
+                enter();
+            }
+        }
+    };
+
+    useEffect(() => {        
+        // Add event listener
+        window.addEventListener("keydown", handleKeyDown);
+        
+        // Clean up
+        return () => {
+          window.removeEventListener("keydown", handleKeyDown);
+        };
+      }, [inf, loading, handleKeyDown]);
+
+    const handleActivateTool = () => {
+
+        // Promise.resolve()
+        //     .then(() => {
+        //         setActivateTool(true)
+        //     })
+        //         .then(() => {
+        //             clearCanvas()
+        //         })
+
+        setLoading(true);
+
+        setTimeout(() => {
+          setInf(true);
+        }, 1000);
+
+    }
 
     const startDrawing = (e) => {
         const canvas = canvasRef.current;
@@ -231,17 +311,6 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
         setDrawCoords(null)
     };
 
-    const handleActivateTool = () => {
-
-        Promise.resolve()
-            .then(() => {
-                setActivateTool(true)
-            })
-                .then(() => {
-                    clearCanvas()
-                })
-    }
-
     const useKeyPress = (key, callback) => {
         useEffect(() => {
             const handleKeyDown = (event) => {
@@ -275,14 +344,14 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
                 />
             </div>
 
-            <div className=" bg-[#03020C] backdrop-blur-lg
+            <div className={ `${!view && ("hidden")} bg-[#03020C] backdrop-blur-lg
              border-white/30 shadow-lg overflow-hidden border w-[360px]
-             absolute top-[0px] right-[40px] text-white rounded-[40px] pt-[12px] px-[14px] pb-[10px]">
+             absolute top-[0px] right-[40px] text-white rounded-[40px] pt-[12px] px-[14px] pb-[10px]`}>
 
                 <div className='flex justify-between'>
                     <div className='flex space-x-[6px]'>
                         <div className='text-white'>
-                            <PenTool />
+                            <Wand />
                         </div>
                         <div>
                             Magic Pen
@@ -293,31 +362,72 @@ export const Canvas = ({setViewBox, isDragging, setDrawCoords, setActivateTool})
                     </div>
                 </div>
 
-                <div className='flex justify-center w-full'>
-                <div className='space-x-[28px] flex w-fit justify-center items-center mt-[28px] bg-[#271e3f] rounded-[14px] py-[8px] px-[8px]'>
-                    <div className='rounded-[12px] text-[18px] px-[18px] py-[2px] flex items-center space-x-[6px] bg-gradient-to-r from-[#0000FF] via-[#ff00a2] to-[#00bfff]'>
-                        <div>
-                            <SparkleIcon/>
+                <div className='flex justify-center w-full '>
+                    <div className='space-x-[28px] flex w-fit justify-center items-center mt-[28px] bg-[#271e3f] rounded-[14px] py-[8px] px-[8px]'>
+                        <div className='hover:border-yellow-300 border border-[#2d364c] rounded-[12px] text-[18px] px-[18px] py-[2px] flex items-center space-x-[6px] bg-gradient-to-r from-[#0000FF] via-[#ff00a2] to-[#00bfff]'>
+                            <div className="w-[24px] h-[24px]">
+                                <SparkleSVG />
+                            </div>
+                            <div>
+                                <button className='' onClick={() => handleActivateTool()}>Enter</button>
+                            </div>
                         </div>
-                        <div>
-                            <button className='' onClick={() => handleActivateTool()}>Enter</button>
-                        </div>
-                    </div>
-                    <button className='rounded-[10px] bg-[#D3D3D3] text-[#353535] px-[14px] py-[]' onClick={clearCanvas}>Clear</button>
-                </div>
-                </div>
-
-                <div className='w-full flex flex-col items-center mt-[34px] '>
-
-                    <AnimatedGradientBorder text={"Capacitor"}/>
-
-                    <div className='flex space-x-[8px] text-[30px] text-[#D7D7FF] items-center bg-[#3A3460] rounded-[12px] px-[26px] opacity-45'>
-                        <div>
-                            <SparkleIcon />
-                        </div>
-                        <p>Resistor</p>
+                        <button className='rounded-[10px] bg-[#D3D3D3] text-[#353535] px-[14px] py-[]' onClick={clearCanvas}>Clear</button>
                     </div>
                 </div>
+
+                {
+                    inf && dummy.length > 0 ? (
+                        <div className='h-[128px]'>
+                            {
+                                show === "up" ? (
+                                    <div className='w-full flex flex-col items-center pt-[34px]'>
+
+                                        <div className='' onClick={enter}>
+                                            <AnimatedGradientBorder key={2} text={dummy[0]}/>
+                                        </div>
+                    
+                                        <div className='flex space-x-[8px] text-[30px] text-[#D7D7FF] items-center bg-[#3A3460] rounded-[12px] px-[26px] opacity-45'>
+                                        <div className="w-[24px] h-[24px]">
+                                            <SparkleSVG />
+                                        </div>
+                                            <p>{dummy[1]}</p>
+                                        </div>
+                                    </div>
+                                ) : show === "down" && (
+                                    <div className='w-full flex flex-col items-center pt-[34px] '>
+                    
+                                        <div className='flex space-x-[8px] text-[30px] text-[#D7D7FF] items-center bg-[#3A3460] rounded-[12px] px-[26px] opacity-45'>
+                                        <div className="w-[24px] h-[24px]">
+                                            <SparkleSVG />
+                                        </div>
+                                            <p>{dummy[0]}</p>
+                                        </div>
+
+                                        <div className='' onClick={enter}>
+                                            <AnimatedGradientBorder key={2} text={dummy[1]}/>
+                                        </div>
+
+                                    </div>
+                                )
+                            }
+                        </div>
+                    ) : (
+                        <div className=' h-[128px] '>
+                            {
+                                loading === true ? (
+                                    <div className='w-full h-full flex justify-center items-center text-[24px] text-[#5d5a66]'>
+                                        Hang On...
+                                    </div>
+                                ) : (
+                                    <div className='w-full h-full flex justify-center items-center text-[24px] text-[#5d5a66]'>
+                                        Results will show up here 
+                                    </div>
+                                )
+                            }
+                        </div>
+                    )
+                }
 
                 <div className='bg-[#302D51] rounded-[28px] flex justify-between px-[14px] py-[12px] mt-[34px]'>
                     <div className='bg-[#FF761A] rounded-[44px] py-[4px] px-[12px]'>Component</div>
